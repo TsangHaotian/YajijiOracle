@@ -116,17 +116,20 @@
       0%,100% { opacity: 0.08; transform: translate(-50%,-50%) scale(1); }
       50%     { opacity: 0.20; transform: translate(-50%,-50%) scale(1.08); }
     }
+    .video-container video,
     .video-container img {
       position: absolute;
-      z-index: 1;
       top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: contain;
     }
-    /* 背景GIF：常亮 */
-    .bg-gif { display: block; }
-    /* 动作GIF：默认隐藏，点击后显示 */
-    .gif-overlay { display: none; }
+    /* 背景视频：最顶层常亮 */
+    .bg-video { z-index: 3; }
+    /* 背景GIF：中间层常亮 */
+    .bg-gif { z-index: 2; display: block; }
+    /* 动作GIF：最底层常驻，点击浮到顶层 */
+    .gif-overlay { z-index: 1; display: block; }
+    .gif-overlay.rising { z-index: 10; }
 
     .prompt-text {
       color: #d4c094;
@@ -232,59 +235,13 @@
       opacity: 0.6;
     }
 
-    /* ===== 答案出场特效 ===== */
-    @keyframes answer-appear {
-      0%   { opacity: 0; filter: blur(24px) hue-rotate(0deg); transform: scale(0.15) rotate(-20deg) translateY(60px); }
-      6%   { opacity: 1; filter: blur(0) hue-rotate(1080deg); transform: scale(1.15) rotate(4deg) translateY(-10px); text-shadow: -5px 0 10px cyan, 5px 0 10px red, 0 0 30px yellow; }
-      12%  { opacity: 1; filter: blur(0) hue-rotate(0deg); transform: scale(0.92) rotate(-3deg) translateY(5px); text-shadow: -4px 0 8px #00ffff, 4px 0 8px #ff0040, 0 0 25px #ffff00aa; }
-      20%  { transform: scale(1.05) rotate(2deg); text-shadow: -3px 0 7px #00ff88, 3px 0 7px #ff6600, 0 0 20px #ff0040aa; }
-      30%  { opacity: 1; filter: blur(0); transform: scale(1) rotate(0deg) translateY(0); text-shadow: 0 0 8px #ffe600, 0 0 25px #ffe60066, -2px 0 6px #ff8800aa; }
-      44%  { text-shadow: 0 0 8px #66ff00, 0 0 25px #66ff0066, 0 0 50px #66ff0033, -3px 0 6px cyan, 3px 0 6px red; }
-      58%  { text-shadow: 0 0 8px #00ffcc, 0 0 25px #00ffcc66, 0 0 50px #00ffcc33, -4px 0 8px #ff00ff66; }
-      72%  { text-shadow: 0 0 8px #6600ff, 0 0 25px #6600ff66, 0 0 50px #6600ff33, 4px 0 8px #00ffff66; }
-      88%  { text-shadow: 0 0 8px #ff00cc, 0 0 25px #ff00cc66, 0 0 50px #ff00cc33, -2px 0 6px #66ff00aa, 2px 0 6px #ff0066aa; }
-      100% { opacity: 1; filter: blur(0); transform: scale(1) rotate(0deg) translateY(0); text-shadow: 0 0 8px #ff6699, 0 0 25px #ff669966, 0 0 50px #ff669933; }
+    /* ===== 答案出场（简洁渐入） ===== */
+    @keyframes answer-fade-in {
+      0%   { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
-    .answer-colorful { animation: answer-appear 5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-
-    @keyframes answer-shake {
-      0%,100% { transform: translate(0,0); }
-      2%  { transform: translate(-6px,4px); }
-      4%  { transform: translate(6px,-3px); }
-      6%  { transform: translate(-4px,-5px); }
-      8%  { transform: translate(4px,3px); }
-      10% { transform: translate(-3px,5px); }
-      12% { transform: translate(3px,-4px); }
-      14% { transform: translate(-2px,2px); }
-      16% { transform: translate(0); }
-    }
-    @keyframes bg-flash {
-      0%   { background: rgba(0,0,0,0.65); }
-      8%   { background: rgba(50,0,10,0.75); }
-      16%  { background: rgba(10,40,0,0.75); }
-      24%  { background: rgba(0,10,50,0.75); }
-      32%  { background: rgba(40,0,40,0.75); }
-      42%  { background: rgba(0,0,0,0.65); }
-      100% { background: rgba(0,0,0,0.65); }
-    }
-    .answer-shake {
-      animation: answer-shake 1.5s ease-out forwards, bg-flash 4s ease-out forwards;
-    }
-
-    @keyframes shimmer-sweep {
-      0%   { transform: translateX(-100%) skewX(-15deg); }
-      55%  { transform: translateX(200%) skewX(-15deg); }
-      100% { transform: translateX(200%) skewX(-15deg); }
-    }
-    .answer-shimmer::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0;
-      width: 50%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,200,0.1), transparent);
-      transform: translateX(-100%) skewX(-15deg);
-      animation: shimmer-sweep 3s ease-out 0.3s forwards;
-      pointer-events: none;
+    .answer-fade-in {
+      animation: answer-fade-in 0.4s ease-out forwards;
     }
 
     @media (max-width: 500px) {
@@ -297,7 +254,7 @@
   </style>
 </head>
 <body>
-  <div class="version-tag">v 1.0.1</div>
+  <div class="version-tag">v 1.0.2</div>
 
   <!-- 加载弹窗（极简等待） -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -312,8 +269,10 @@
   </div>
 
   <div class="book-container">
-    <!-- 中央动画区：背景GIF（无视频加载黑屏问题） -->
+    <!-- 中央动画区 -->
     <div class="video-container">
+      <video autoplay loop muted playsinline class="bg-video" id="bgVideo" preload="auto" src="mp4/ya.mp4"
+             webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
       <img src="mp4/ya.gif" class="bg-gif" id="bgGif" alt="">
       <img src="mp4/tiao.gif" class="gif-overlay" id="tiaoGif" alt="">
     </div>
@@ -341,9 +300,10 @@
       const progressText = document.getElementById('progressText');
       const tiaoGif = document.getElementById('tiaoGif');
       const bgGif = document.getElementById('bgGif');
+      const bgVideo = document.getElementById('bgVideo');
       const getAnswerBtn = document.getElementById('getAnswerBtn');
 
-      // ========== 轻量预加载：只等 tiaoGif 就绪 + 2秒保底 ==========
+      // ========== 预加载：视频 + GIF 同时加载 ==========
       var loaded = false;
       var pageShown = false;
 
@@ -358,13 +318,12 @@
         console.log('🦆 YajijiOracle v1.0.1 已开启。');
       }
 
-      // 进度更新
       function updateProgress(pct) {
         progressFill.style.width = pct + '%';
         progressText.textContent = pct + '%';
       }
 
-      // 保底：最长等 3 秒自动显示页面
+      // 保底：3 秒自动显示
       var safetyTimer = setTimeout(function() {
         updateProgress(100);
         if (!pageShown) showPage();
@@ -372,19 +331,18 @@
 
       // 预加载 tiaoGif（动作GIF）
       var preloadImg = new Image();
-      preloadImg.onload = function() {
+      function onPreloadDone() {
         updateProgress(100);
         if (!loaded) { loaded = true; clearTimeout(safetyTimer); showPage(); }
-      };
-      preloadImg.onerror = function() {
-        updateProgress(100);
-        if (!loaded) { loaded = true; clearTimeout(safetyTimer); showPage(); }
-      };
+      }
+      preloadImg.onload = onPreloadDone;
+      preloadImg.onerror = onPreloadDone;
       preloadImg.src = tiaoGif.src;
-      // 触发DOM图加载
       tiaoGif.src = tiaoGif.src;
-      // 后台GIF也开始
       bgGif.src = bgGif.src;
+
+      // 启动背景视频
+      bgVideo.play().catch(function(){});
 
       // ========== 答案系统 ==========
       const answers = [
@@ -476,25 +434,20 @@
         isAnimating = true;
         var newAnswer = getRandomAnswer();
 
-        answerTextElement.classList.remove('answer-placeholder','answer-colorful');
-        answerDisplay.classList.remove('answer-shimmer','answer-shake');
-        answerTextElement.style.opacity = '0';
-        answerTextElement.style.filter = 'blur(24px) hue-rotate(0deg)';
-        answerTextElement.style.transform = 'scale(0.15) rotate(-20deg) translateY(60px)';
+        answerTextElement.classList.remove('answer-placeholder','answer-fade-in');
 
         setAnswerWithEffect(newAnswer);
 
-        void answerTextElement.offsetWidth;
-        answerTextElement.classList.add('answer-colorful');
-        answerDisplay.classList.add('answer-shimmer','answer-shake');
+        answerTextElement.classList.add('answer-fade-in');
 
         playChime();
         createConfetti();
 
-        // 触发 tiao GIF
+        // tiao GIF 浮到顶层
+        tiaoGif.classList.add('rising');
         tiaoGif.src = tiaoGif.src.split('?')[0] + '?t=' + Date.now();
-        tiaoGif.style.display = 'block';
-        setTimeout(function() { tiaoGif.style.display = 'none'; }, 2500);
+        // 播完沉回底层
+        setTimeout(function() { tiaoGif.classList.remove('rising'); }, 2500);
 
         setTimeout(function() { isAnimating = false; }, 600);
         getAnswerBtn.style.transform = 'scale(0.96)';
