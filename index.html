@@ -120,7 +120,7 @@
       position: relative;
     }
 
-    .video-container img {
+    .video-container video, .video-container img {
       position: absolute;
       top: 0;
       left: 0;
@@ -351,7 +351,7 @@
 </head>
 <body>
   <!-- 版本号 -->
-  <div class="version-tag">v 0.2.0</div>
+  <div class="version-tag">v 0.2.1</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -368,7 +368,8 @@
     
     <!-- 中央MP4视频区域 -->
     <div class="video-container">
-      <img src="mp4/ya.gif" class="gif-bg" id="bgGif" alt="">
+      <video autoplay loop muted playsinline id="bgVideo" preload="auto" src="mp4/ya.mp4"
+             webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
       <img src="mp4/tiao.gif" class="gif-overlay" id="tiaoGif" alt="">
       <img src="mp4/play.gif" class="gif-overlay" id="playGif" alt="">
     </div>
@@ -397,24 +398,18 @@
 
   <script>
     (function() {
-      // ========== GIF 预加载 ==========
+      // ========== 预加载（视频 + GIF） ==========
       const loadingOverlay = document.getElementById('loadingOverlay');
       const progressFill = document.getElementById('progressFill');
       const progressText = document.getElementById('progressText');
-      const bgGif = document.getElementById('bgGif');
+      const bgVideo = document.getElementById('bgVideo');
       const tiaoGif = document.getElementById('tiaoGif');
       const playGif = document.getElementById('playGif');
 
       function loadAll() {
-        var gifs = [
-          { el: bgGif, src: 'mp4/ya.gif' },
-          { el: tiaoGif, src: 'mp4/tiao.gif' },
-          { el: playGif, src: 'mp4/play.gif' }
-        ];
+        var total = 3; // 1 video + 2 gifs
         var loaded = 0;
-        var total = gifs.length;
         var shown = false;
-
         var safetyTimer = setTimeout(function() { if (!shown) { shown = true; showPage(); } }, 15000);
 
         function onOneLoaded() {
@@ -422,7 +417,6 @@
           var pct = Math.min(100, Math.round((loaded / total) * 100));
           progressFill.style.width = pct + '%';
           progressText.textContent = pct + '%';
-
           if (!shown && loaded >= total) {
             shown = true;
             clearTimeout(safetyTimer);
@@ -430,13 +424,23 @@
           }
         }
 
-        gifs.forEach(function(item) {
+        // 背景视频：canplay 表示可以流畅播放
+        bgVideo.addEventListener('canplay', onOneLoaded, { once: true });
+        bgVideo.addEventListener('error', onOneLoaded, { once: true });
+
+        // 自动播放（muted 大多数浏览器允许）
+        bgVideo.play().catch(function() {});
+        // 如果视频本身已缓存就绪（readyState），手动触发
+        if (bgVideo.readyState >= 3) onOneLoaded();
+
+        // 动作 GIF：Image 预加载
+        [tiaoGif, playGif].forEach(function(el) {
           var img = new Image();
           img.onload = onOneLoaded;
-          img.onerror = onOneLoaded; // 加载失败也继续
-          img.src = item.src;
-          // 更新 DOM 元素的 src（后台预加载的 Image 对象和 DOM 的 img 共享缓存）
-          item.el.src = item.src;
+          img.onerror = onOneLoaded;
+          img.src = el.src;
+          // DOM img 共享浏览器缓存
+          el.src = el.src;
         });
       }
 
