@@ -182,38 +182,6 @@
       font-style: italic;
     }
 
-    .get-answer-btn {
-      background: rgba(18,16,5,0.7);
-      border: 1.5px solid #c4a64b;
-      color: #ecd994;
-      font-size: 1.3rem;
-      font-weight: 500;
-      letter-spacing: 0.3em;
-      padding: 0.9rem 2.8rem;
-      border-radius: 3rem;
-      cursor: pointer;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 5px 20px rgba(0,0,0,0.7), 0 0 18px rgba(190,150,30,0.3);
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      margin-top: 0.4rem;
-      display: flex; align-items: center; gap: 0.5rem; justify-content: center;
-    }
-    .get-answer-btn:hover {
-      background: rgba(30,25,8,0.8);
-      border-color: #e7c45e;
-      color: #fcedb3;
-      box-shadow: 0 0 35px rgba(210,160,20,0.6), 0 8px 22px black;
-      transform: scale(1.02);
-      letter-spacing: 0.35em;
-    }
-    .get-answer-btn:active {
-      transform: scale(0.97);
-      box-shadow: 0 0 45px #b4942e;
-      background: #1f1a08;
-    }
-
     .duck-icon { font-size: 1.6rem; filter: drop-shadow(0 0 8px gold); }
 
     .version-tag {
@@ -235,26 +203,35 @@
       opacity: 0.6;
     }
 
-    /* ===== 答案出场（简洁渐入） ===== */
-    @keyframes answer-fade-in {
-      0%   { opacity: 0; transform: translateY(10px); }
-      100% { opacity: 1; transform: translateY(0); }
+    /* ===== 答案出场（慢速优雅渐入） ===== */
+    @keyframes answer-appear {
+      0%   { opacity: 0; transform: translateY(12px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .answer-fade-in {
-      animation: answer-fade-in 0.4s ease-out forwards;
+    .answer-appear {
+      animation: answer-appear 1.5s ease-out forwards;
+    }
+    /* 答案出现魔法辉光：先亮起再收成常驻光晕 */
+    @keyframes answer-glow {
+      0%   { text-shadow: 0 0 5px rgba(235,215,156,0); }
+      25%  { text-shadow: 0 0 40px rgba(235,215,156,0.6), 0 0 80px rgba(200,180,100,0.3); }
+      60%  { text-shadow: 0 0 25px rgba(235,215,156,0.3), 0 0 50px rgba(200,180,100,0.1); }
+      100% { text-shadow: 0 0 20px #9b8a4a; }
+    }
+    .answer-glow {
+      animation: answer-glow 2s ease-out forwards;
     }
 
     @media (max-width: 500px) {
       .book-container { padding: 1.5rem 0.8rem; border-radius: 2rem; }
       .pet-scene { margin-bottom: 1.5rem; overflow: hidden; }
       .answer-display { font-size: 1.2rem; min-height: 100px; padding: 1.2rem; }
-      .get-answer-btn { font-size: 1.1rem; padding: 0.7rem 1.8rem; }
       .prompt-text { font-size: 1rem; }
     }
   </style>
 </head>
 <body>
-  <div class="version-tag">v 1.0.9</div>
+  <div class="version-tag">v 1.1.0</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -275,17 +252,13 @@
     </div>
 
     <div class="prompt-text">
-      <span class="duck-icon">🦆</span> 内心想一个问题 <br>
-      <span style="font-size:0.9rem; display:block; margin-top:0.2rem;">鸭吉吉会给你回复</span>
+      <span class="duck-icon">🦆</span> 戳一戳鸭吉吉<br>
+      <span style="font-size:0.9rem; display:block; margin-top:0.2rem;">它会给你答案</span>
     </div>
 
     <div class="answer-display" id="answerDisplay">
       <span class="answer-placeholder" id="answerText">静默思考中...</span>
     </div>
-
-    <button class="get-answer-btn" id="getAnswerBtn">
-      <span>📖</span> 获取回答 <span>📖</span>
-    </button>
 
     <div class="footnote">◈ YajijiOracle · 鸭吉吉答案之书 ◈</div>
   </div>
@@ -295,22 +268,12 @@
       const loadingOverlay = document.getElementById('loadingOverlay');
       const progressFill = document.getElementById('progressFill');
       const progressText = document.getElementById('progressText');
-      const getAnswerBtn = document.getElementById('getAnswerBtn');
 
-      // ========== 页面展示：不依赖视频加载 ==========
+      // ========== 预加载宠物精灵图 ==========
+      var loadedCount = 0;
+      var totalAssets = 2; // peace_strip + jump_strip
       var pageShown = false;
       var progressVal = 0;
-
-      function showPage() {
-        if (pageShown) return;
-        pageShown = true;
-        loadingOverlay.classList.add('hidden');
-        getAnswerBtn.addEventListener('click', handleGetAnswer);
-        window.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGetAnswer(); }
-        });
-        console.log('🦆 YajijiOracle v1.0.9 已开启。');
-      }
 
       function updateProgress(pct) {
         progressVal = pct;
@@ -318,23 +281,68 @@
         progressText.textContent = pct + '%';
       }
 
-      // 快速渐进加载动画（视觉装饰），然后显示页面
-      function animateLoading() {
-        var steps = [0, 15, 30, 50, 68, 82, 92, 100];
-        var i = 0;
-        function tick() {
-          if (pageShown) return;
-          updateProgress(steps[i]);
-          i++;
-          if (i < steps.length) {
-            setTimeout(tick, 70 + Math.random() * 60);
-          } else {
-            setTimeout(function() { if (!pageShown) showPage(); }, 200);
-          }
-        }
-        tick();
+      function showPage() {
+        if (pageShown) return;
+        pageShown = true;
+        updateProgress(100);
+        setTimeout(function() {
+          loadingOverlay.classList.add('hidden');
+        }, 300);
+        window.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGetAnswer(); }
+        });
+        console.log('🦆 YajijiOracle v1.1.0 已开启。');
       }
-      animateLoading();
+
+      // 装饰进度模拟 + 真实加载跟踪
+      function onAssetLoaded() {
+        loadedCount++;
+        var realPct = Math.round((loadedCount / totalAssets) * 100);
+        // 取模拟进度和真实进度的最大值
+        if (realPct > progressVal) updateProgress(realPct);
+        if (loadedCount >= totalAssets) {
+          clearFallback();
+          showPage();
+        }
+      }
+
+      // 预加载 peace_strip
+      var peaceImg = new Image();
+      peaceImg.onload = peaceImg.onerror = onAssetLoaded;
+      peaceImg.src = 'assets/peace_strip.png';
+
+      // 预加载 jump_strip
+      var jumpImg = new Image();
+      jumpImg.onload = jumpImg.onerror = onAssetLoaded;
+      jumpImg.src = 'assets/jump_strip.png';
+
+      // 模拟进度装饰（到80%为止，剩下等真实加载）
+      var simSteps = [0, 8, 18, 30, 42, 55, 65, 72, 78, 80];
+      var simIdx = 0;
+      function tickSim() {
+        if (pageShown) return;
+        if (progressVal < simSteps[simIdx]) updateProgress(simSteps[simIdx]);
+        simIdx++;
+        if (simIdx < simSteps.length) {
+          setTimeout(tickSim, 80 + Math.random() * 70);
+        } else {
+          // 模拟走到80%后，每3秒检查一次真实进度
+          function checkDone() {
+            if (!pageShown) {
+              // 超过15秒强制显示
+              showPage();
+            }
+          }
+          setTimeout(checkDone, 15000);
+        }
+      }
+      tickSim();
+
+      // 保底：20秒强制显示
+      var fallbackTimer = setTimeout(function() {
+        if (!pageShown) showPage();
+      }, 20000);
+      function clearFallback() { clearTimeout(fallbackTimer); fallbackTimer = null; }
 
       // ========== 宠物交互 ==========
       const petCharacter = document.getElementById('petCharacter');
@@ -363,10 +371,15 @@
         }, 4000);
       }
 
-      petCharacter.addEventListener('click', petBounce);
+      function petClickHandler() {
+        petBounce();
+        handleGetAnswer();
+      }
+
+      petCharacter.addEventListener('click', petClickHandler);
       petCharacter.addEventListener('touchstart', function(e) {
         e.preventDefault();
-        petBounce();
+        petClickHandler();
       }, { passive: false });
 
       // ========== 答案系统 ==========
@@ -386,7 +399,6 @@
         "别被表象迷惑。", "你早已知道答案。", "水到渠成。", "或许需要他人帮助。"
       ];
 
-      const answerDisplay = document.getElementById('answerDisplay');
       const answerTextElement = document.getElementById('answerText');
 
       var chimeAudio = new Audio('audio/click.mp3');
@@ -403,48 +415,6 @@
         try { chimeAudio.currentTime = 0; chimeAudio.play().catch(function(){}); } catch(e) {}
       }
 
-      function createConfetti() {
-        var rect = answerDisplay.getBoundingClientRect();
-        var cx = rect.left + rect.width/2;
-        var cy = rect.top + rect.height/2;
-        var colors = ['#ff0040','#ff8c00','#ffe600','#66ff00','#00ffcc','#0066ff','#6600ff','#ff00cc','#ff88aa','#ffcc00','#00ff00','#ff00ff','#ffffff'];
-
-        for (var i = 0; i < 20; i++) {
-          var el = document.createElement('div');
-          var isStreamer = i > 15 && Math.random() > 0.4;
-          var size = 3 + Math.random() * 6;
-          var color = colors[Math.floor(Math.random() * colors.length)];
-          el.style.cssText = [
-            'position:fixed',
-            'width:' + (isStreamer ? size*0.3 : size) + 'px',
-            'height:' + (isStreamer ? size*4 : size) + 'px',
-            'background:' + color,
-            'border-radius:' + (Math.random() > 0.6 ? '50%' : '1px'),
-            'pointer-events:none',
-            'z-index:1000',
-            'left:' + cx + 'px',
-            'top:' + cy + 'px',
-            'box-shadow:0 0 ' + (2+Math.random()*6) + 'px ' + color,
-            'opacity:' + (0.7+Math.random()*0.3)
-          ].join(';');
-          document.body.appendChild(el);
-
-          var angle = -Math.PI/2 + (Math.random()-0.5)*Math.PI*1.2;
-          var dist = 40 + Math.random()*260;
-          var dx = Math.cos(angle)*dist;
-          var dy = Math.sin(angle)*dist - 80;
-
-          el.animate([
-            { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: '1' },
-            { transform: 'translate('+dx+'px,'+dy+'px) scale(0.1) rotate('+(Math.random()*1080-540)+'deg)', opacity: '0' }
-          ], {
-            duration: 1800 + Math.random()*1400,
-            easing: 'cubic-bezier(0.08,0.9,0.3,1)',
-            fill: 'forwards',
-            delay: Math.random()*300
-          }).onfinish = function() { el.remove(); };
-        }
-      }
 
       function setAnswerWithEffect(answer) {
         if (animationTimer) clearTimeout(animationTimer);
@@ -459,19 +429,15 @@
         isAnimating = true;
         var newAnswer = getRandomAnswer();
 
-        answerTextElement.classList.remove('answer-placeholder','answer-fade-in');
+        answerTextElement.classList.remove('answer-placeholder','answer-appear','answer-glow');
 
         setAnswerWithEffect(newAnswer);
 
-        answerTextElement.classList.add('answer-fade-in');
+        answerTextElement.classList.add('answer-appear','answer-glow');
 
         playChime();
-        createConfetti();
-        petBounce();  // 宠物同步弹跳
 
-        setTimeout(function() { isAnimating = false; }, 600);
-        getAnswerBtn.style.transform = 'scale(0.96)';
-        setTimeout(function() { getAnswerBtn.style.transform = ''; }, 120);
+        setTimeout(function() { isAnimating = false; }, 1600);
       }
     })();
   </script>
