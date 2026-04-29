@@ -252,20 +252,69 @@
       opacity: 0.6;
     }
 
-    /* 炫彩答案发光 */
-    @keyframes glow-rainbow {
-      0%   { text-shadow: 0 0 8px #ff0040, 0 0 25px #ff004066, 0 0 50px #ff004033; }
-      12%  { text-shadow: 0 0 8px #ff8c00, 0 0 25px #ff8c0066, 0 0 50px #ff8c0033; }
-      25%  { text-shadow: 0 0 8px #ffe600, 0 0 25px #ffe60066, 0 0 50px #ffe60033; }
-      37%  { text-shadow: 0 0 8px #66ff00, 0 0 25px #66ff0066, 0 0 50px #66ff0033; }
-      50%  { text-shadow: 0 0 8px #00ffcc, 0 0 25px #00ffcc66, 0 0 50px #00ffcc33; }
-      62%  { text-shadow: 0 0 8px #0066ff, 0 0 25px #0066ff66, 0 0 50px #0066ff33; }
-      75%  { text-shadow: 0 0 8px #6600ff, 0 0 25px #6600ff66, 0 0 50px #6600ff33; }
-      87%  { text-shadow: 0 0 8px #ff00cc, 0 0 25px #ff00cc66, 0 0 50px #ff00cc33; }
-      100% { text-shadow: 0 0 8px #ff0040, 0 0 25px #ff004066, 0 0 50px #ff004033; }
+    /* ===== 精神污染 · 答案出场 ===== */
+    @keyframes answer-appear {
+      0%   { opacity: 0; filter: blur(24px) hue-rotate(0deg); transform: scale(0.15) rotate(-20deg) translateY(60px); }
+      6%   { opacity: 1; filter: blur(0) hue-rotate(1080deg); transform: scale(1.15) rotate(4deg) translateY(-10px); text-shadow: -5px 0 10px cyan, 5px 0 10px red, 0 0 30px yellow; }
+      12%  { opacity: 1; filter: blur(0) hue-rotate(0deg); transform: scale(0.92) rotate(-3deg) translateY(5px); text-shadow: -4px 0 8px #00ffff, 4px 0 8px #ff0040, 0 0 25px #ffff00aa; }
+      20%  { transform: scale(1.05) rotate(2deg); text-shadow: -3px 0 7px #00ff88, 3px 0 7px #ff6600, 0 0 20px #ff0040aa; }
+      30%  { opacity: 1; filter: blur(0); transform: scale(1) rotate(0deg) translateY(0); text-shadow: 0 0 8px #ffe600, 0 0 25px #ffe60066, -2px 0 6px #ff8800aa; }
+      44%  { text-shadow: 0 0 8px #66ff00, 0 0 25px #66ff0066, 0 0 50px #66ff0033, -3px 0 6px cyan, 3px 0 6px red; }
+      58%  { text-shadow: 0 0 8px #00ffcc, 0 0 25px #00ffcc66, 0 0 50px #00ffcc33, -4px 0 8px #ff00ff66; }
+      72%  { text-shadow: 0 0 8px #6600ff, 0 0 25px #6600ff66, 0 0 50px #6600ff33, 4px 0 8px #00ffff66; }
+      88%  { text-shadow: 0 0 8px #ff00cc, 0 0 25px #ff00cc66, 0 0 50px #ff00cc33, -2px 0 6px #66ff00aa, 2px 0 6px #ff0066aa; }
+      100% { opacity: 1; filter: blur(0); transform: scale(1) rotate(0deg) translateY(0); text-shadow: 0 0 8px #ff6699, 0 0 25px #ff669966, 0 0 50px #ff669933; }
     }
     .answer-colorful {
-      animation: glow-rainbow 1.6s ease-out forwards;
+      animation: answer-appear 5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* 卡片蹦迪 — 抖动 + 背景闪烁 */
+    @keyframes answer-shake {
+      0%, 100% { transform: translate(0, 0); }
+      2% { transform: translate(-6px, 4px); }
+      4% { transform: translate(6px, -3px); }
+      6% { transform: translate(-4px, -5px); }
+      8% { transform: translate(4px, 3px); }
+      10% { transform: translate(-3px, 5px); }
+      12% { transform: translate(3px, -4px); }
+      14% { transform: translate(-2px, 2px); }
+      16% { transform: translate(0); }
+    }
+    @keyframes bg-flash {
+      0%   { background: rgba(0,0,0,0.65); }
+      8%   { background: rgba(50,0,10,0.75); }
+      16%  { background: rgba(10,40,0,0.75); }
+      24%  { background: rgba(0,10,50,0.75); }
+      32%  { background: rgba(40,0,40,0.75); }
+      42%  { background: rgba(0,0,0,0.65); }
+      100% { background: rgba(0,0,0,0.65); }
+    }
+    .answer-shake {
+      animation: answer-shake 1.5s ease-out forwards, bg-flash 4s ease-out forwards;
+    }
+
+    /* 流光扫过 */
+    @keyframes shimmer-sweep {
+      0%   { transform: translateX(-100%) skewX(-15deg); }
+      55%  { transform: translateX(200%) skewX(-15deg); }
+      100% { transform: translateX(200%) skewX(-15deg); }
+    }
+    .answer-shimmer::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 200, 0.1), transparent);
+      transform: translateX(-100%) skewX(-15deg);
+      animation: shimmer-sweep 3s ease-out 0.3s forwards;
+      pointer-events: none;
+    }
+    .answer-display {
+      position: relative;
+      overflow: hidden;
     }
 
     @media (max-width: 500px) {
@@ -295,7 +344,7 @@
 </head>
 <body>
   <!-- 版本号 -->
-  <div class="version-tag">v 0.0.6</div>
+  <div class="version-tag">v 0.0.8</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -460,36 +509,41 @@
         var rect = answerDisplay.getBoundingClientRect();
         var cx = rect.left + rect.width / 2;
         var cy = rect.top + rect.height / 2;
-        var colors = ['#ff0040','#ff8c00','#ffe600','#66ff00','#00ffcc','#0066ff','#6600ff','#ff00cc','#ff6699','#ffcc00'];
+        var colors = ['#ff0040','#ff8c00','#ffe600','#66ff00','#00ffcc','#0066ff','#6600ff','#ff00cc','#ff88aa','#ffcc00','#00ff00','#ff00ff','#ffffff'];
 
-        for (var i = 0; i < 50; i++) {
+        for (var i = 0; i < 80; i++) {
           var el = document.createElement('div');
-          var size = 4 + Math.random() * 6;
+          var isStreamer = i > 60 && Math.random() > 0.4;
+          var size = 3 + Math.random() * 6;
+          var color = colors[Math.floor(Math.random() * colors.length)];
           el.style.cssText = [
             'position:fixed',
-            'width:' + size + 'px',
-            'height:' + size + 'px',
-            'background:' + colors[Math.floor(Math.random() * colors.length)],
-            'border-radius:' + (Math.random() > 0.5 ? '50%' : '2px'),
+            'width:' + (isStreamer ? size * 0.3 : size) + 'px',
+            'height:' + (isStreamer ? size * 4 : size) + 'px',
+            'background:' + color,
+            'border-radius:' + (Math.random() > 0.6 ? '50%' : '1px'),
             'pointer-events:none',
             'z-index:1000',
             'left:' + cx + 'px',
-            'top:' + cy + 'px'
+            'top:' + cy + 'px',
+            'box-shadow:0 0 ' + (2 + Math.random() * 6) + 'px ' + color,
+            'opacity:' + (0.7 + Math.random() * 0.3)
           ].join(';');
           document.body.appendChild(el);
 
-          var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
-          var dist = 80 + Math.random() * 180;
+          var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.2;
+          var dist = 40 + Math.random() * 260;
           var dx = Math.cos(angle) * dist;
-          var dy = Math.sin(angle) * dist - 40;
+          var dy = Math.sin(angle) * dist - 80;
 
           el.animate([
-            { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
-            { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(0.2) rotate(' + (Math.random() * 720 - 360) + 'deg)', opacity: 0 }
+            { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: '1' },
+            { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(0.1) rotate(' + (Math.random() * 1080 - 540) + 'deg)', opacity: '0' }
           ], {
-            duration: 700 + Math.random() * 500,
-            easing: 'cubic-bezier(0,0.8,0.5,1)',
-            fill: 'forwards'
+            duration: 1000 + Math.random() * 1200,
+            easing: 'cubic-bezier(0.08,0.9,0.3,1)',
+            fill: 'forwards',
+            delay: Math.random() * 300
           }).onfinish = function() { el.remove(); };
         }
       }
@@ -498,17 +552,10 @@
         if (animationTimer) clearTimeout(animationTimer);
         answerTextElement.classList.remove('answer-placeholder');
         answerTextElement.textContent = answer;
-        answerTextElement.style.transition = 'opacity 0.2s ease';
-        answerTextElement.style.opacity = '0.4';
+        // CSS 动画接管出场，这里不做操作透明过渡
         animationTimer = setTimeout(function() {
-          answerTextElement.style.opacity = '1';
           animationTimer = null;
         }, 60);
-        answerDisplay.style.transition = 'box-shadow 0.25s';
-        answerDisplay.style.boxShadow = 'inset 0 0 45px rgba(220, 180, 30, 0.5), 0 0 30px #b4942e';
-        setTimeout(function() {
-          answerDisplay.style.boxShadow = 'inset 0 0 35px rgba(20, 15, 0, 0.9), 0 8px 20px rgba(0,0,0,0.8)';
-        }, 250);
       }
 
       function handleGetAnswer() {
@@ -517,10 +564,20 @@
         }
         isAnimating = true;
         var newAnswer = getRandomAnswer();
+
+        // 清除旧动画状态
         answerTextElement.classList.remove('answer-placeholder', 'answer-colorful');
+        answerDisplay.classList.remove('answer-shimmer', 'answer-shake');
+        answerTextElement.style.opacity = '0';
+        answerTextElement.style.filter = 'blur(24px) hue-rotate(0deg)';
+        answerTextElement.style.transform = 'scale(0.15) rotate(-20deg) translateY(60px)';
+
         setAnswerWithEffect(newAnswer);
+
+        // 触发 CSS 出场动画
         void answerTextElement.offsetWidth;
         answerTextElement.classList.add('answer-colorful');
+        answerDisplay.classList.add('answer-shimmer', 'answer-shake');
 
         playChime();
         createConfetti();
@@ -530,7 +587,7 @@
           video.play().catch(function() {});
         }
 
-        setTimeout(function() { isAnimating = false; }, 300);
+        setTimeout(function() { isAnimating = false; }, 600);
         getAnswerBtn.style.transform = 'scale(0.96)';
         setTimeout(function() { getAnswerBtn.style.transform = ''; }, 120);
       }
