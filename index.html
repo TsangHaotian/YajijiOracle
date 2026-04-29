@@ -11,6 +11,78 @@
       box-sizing: border-box;
     }
 
+    /* ========== 加载动画 ========== */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s ease;
+    }
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loading-content {
+      text-align: center;
+      max-width: 300px;
+      width: 85%;
+    }
+    .loading-title {
+      font-family: "Noto Serif SC", "Times New Roman", "宋体", serif;
+      font-size: 1.6rem;
+      background: linear-gradient(180deg, #ebd79c 0%, #9b8a5a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.15em;
+    }
+    .loading-subtitle {
+      color: #5a5440;
+      font-size: 0.75rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      margin-bottom: 2.2rem;
+    }
+    .loading-duck {
+      font-size: 2.6rem;
+      margin-bottom: 2rem;
+      animation: pulse-duck 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse-duck {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+    .progress-track {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 200, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #9b8a5a, #ebd79c);
+      border-radius: 3px;
+      transition: width 0.25s ease;
+    }
+    .progress-text {
+      color: #7a6e4a;
+      font-size: 0.8rem;
+      margin-top: 0.7rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.15em;
+    }
+
     body {
       background-color: #000000;
       width: 100%;
@@ -200,13 +272,23 @@
   </style>
 </head>
 <body>
+  <!-- 加载遮罩层 -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-duck">🦆</div>
+      <div class="loading-title">鸭吉吉答案之书</div>
+      <div class="loading-subtitle">YAJIJIORACLE</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">0%</div>
+    </div>
+  </div>
   <div class="book-container">
     
     <!-- 中央MP4视频区域 -->
     <div class="video-container">
-      <video autoplay loop muted playsinline>
-        <source src="mp4/ya.mp4" type="video/mp4">
-      </video>
+      <video loop muted playsinline id="mainVideo"></video>
     </div>
 
     <!-- 提示词：内心想一个问题，鸭吉吉会给你回复 -->
@@ -233,47 +315,60 @@
 
   <script>
     (function() {
+      // ========== 视频预加载 ==========
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+      const video = document.getElementById('mainVideo');
+
+      async function loadVideo() {
+        try {
+          const response = await fetch('mp4/ya.mp4');
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+
+          const contentLength = +response.headers.get('Content-Length');
+          const reader = response.body.getReader();
+          const chunks = [];
+          let received = 0;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            const pct = Math.min(100, Math.round((received / contentLength) * 100));
+            progressFill.style.width = pct + '%';
+            progressText.textContent = pct + '%';
+          }
+
+          const blob = new Blob(chunks, { type: 'video/mp4' });
+          const url = URL.createObjectURL(blob);
+          video.src = url;
+          await video.play();
+        } catch (err) {
+          // 降级：直接加载
+          video.src = 'mp4/ya.mp4';
+          try { await video.play(); } catch (_) { video.muted = true; await video.play(); }
+          progressFill.style.width = '100%';
+          progressText.textContent = '100%';
+        }
+      }
+
+      // ========== 答案系统 ==========
       const answers = [
-        "是的，毫无疑问。",
-        "鸭吉吉说：时机未到。",
-        "相信你的直觉。",
-        "不要犹豫，去吧。",
-        "答案就在你心中。",
-        "再等一等，涟漪会平静。",
-        "它已经在路上了。",
-        "保持好奇心。",
-        "换个角度看看。",
-        "鸭吉吉点头：当然。",
-        "别想太多，顺其自然。",
-        "也许你应该放手。",
-        "这将是一个惊喜。",
-        "值得冒险一试。",
-        "倾听内心的声音。",
-        "很快就会有答案。",
-        "鸭吉吉摇头：未必。",
-        "你需要更多耐心。",
-        "结果是积极的。",
-        "暂时保持沉默。",
-        "对，但方式可能不同。",
-        "命运站在你这边。",
-        "不要强求。",
-        "享受过程吧。",
-        "它会以奇妙的方式出现。",
-        "鸭吉吉认为：可行。",
-        "小心过于乐观。",
-        "先完成手头的事。",
-        "宇宙在为你布局。",
-        "平凡中藏有答案。",
-        "勇敢一点。",
-        "等待更好的时机。",
-        "答案是模糊的，再问一次。",
-        "鸭吉吉微笑：如你所愿。",
-        "改变正在发生。",
-        "专注当下。",
-        "别被表象迷惑。",
-        "你早已知道答案。",
-        "水到渠成。",
-        "或许需要他人帮助。"
+        "是的，毫无疑问。", "鸭吉吉说：时机未到。", "相信你的直觉。",
+        "不要犹豫，去吧。", "答案就在你心中。", "再等一等，涟漪会平静。",
+        "它已经在路上了。", "保持好奇心。", "换个角度看看。",
+        "鸭吉吉点头：当然。", "别想太多，顺其自然。", "也许你应该放手。",
+        "这将是一个惊喜。", "值得冒险一试。", "倾听内心的声音。",
+        "很快就会有答案。", "鸭吉吉摇头：未必。", "你需要更多耐心。",
+        "结果是积极的。", "暂时保持沉默。", "对，但方式可能不同。",
+        "命运站在你这边。", "不要强求。", "享受过程吧。",
+        "它会以奇妙的方式出现。", "鸭吉吉认为：可行。", "小心过于乐观。",
+        "先完成手头的事。", "宇宙在为你布局。", "平凡中藏有答案。",
+        "勇敢一点。", "等待更好的时机。", "答案是模糊的，再问一次。",
+        "鸭吉吉微笑：如你所愿。", "改变正在发生。", "专注当下。",
+        "别被表象迷惑。", "你早已知道答案。", "水到渠成。", "或许需要他人帮助。"
       ];
 
       const answerDisplay = document.getElementById('answerDisplay');
@@ -284,29 +379,19 @@
       let animationTimer = null;
 
       function getRandomAnswer() {
-        const randomIndex = Math.floor(Math.random() * answers.length);
-        return answers[randomIndex];
+        return answers[Math.floor(Math.random() * answers.length)];
       }
 
       function setAnswerWithEffect(answer) {
-        if (animationTimer) {
-          clearTimeout(animationTimer);
-        }
-
-        if (answerTextElement.classList.contains('answer-placeholder')) {
-          answerTextElement.classList.remove('answer-placeholder');
-        }
-        
+        if (animationTimer) clearTimeout(animationTimer);
+        answerTextElement.classList.remove('answer-placeholder');
         answerTextElement.textContent = answer;
-        
         answerTextElement.style.transition = 'opacity 0.2s ease';
         answerTextElement.style.opacity = '0.4';
-        
         animationTimer = setTimeout(() => {
           answerTextElement.style.opacity = '1';
           animationTimer = null;
         }, 60);
-        
         answerDisplay.style.transition = 'box-shadow 0.25s';
         answerDisplay.style.boxShadow = 'inset 0 0 45px rgba(220, 180, 30, 0.5), 0 0 30px #b4942e';
         setTimeout(() => {
@@ -316,46 +401,27 @@
 
       function handleGetAnswer() {
         if (isAnimating) {
-          if (animationTimer) {
-            clearTimeout(animationTimer);
-            animationTimer = null;
-          }
+          if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
         }
-        
         isAnimating = true;
-        
         const newAnswer = getRandomAnswer();
-        
-        if (answerTextElement.classList.contains('answer-placeholder')) {
-          answerTextElement.classList.remove('answer-placeholder');
-        }
-        
+        answerTextElement.classList.remove('answer-placeholder');
         setAnswerWithEffect(newAnswer);
-        
-        setTimeout(() => {
-          isAnimating = false;
-        }, 200);
-        
+        setTimeout(() => { isAnimating = false; }, 200);
         getAnswerBtn.style.transform = 'scale(0.96)';
-        setTimeout(() => {
-          getAnswerBtn.style.transform = '';
-        }, 120);
+        setTimeout(() => { getAnswerBtn.style.transform = ''; }, 120);
       }
 
-      getAnswerBtn.addEventListener('click', handleGetAnswer);
-
-      window.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleGetAnswer();
-        }
+      // ========== 启动 ==========
+      loadVideo().then(() => {
+        loadingOverlay.classList.add('hidden');
+        getAnswerBtn.addEventListener('click', handleGetAnswer);
+        window.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGetAnswer(); }
+        });
+        getAnswerBtn.addEventListener('touchstart', function() {}, { passive: true });
+        console.log('🦆 YajijiOracle · 鸭吉吉答案之书已开启。');
       });
-
-      getAnswerBtn.addEventListener('touchstart', function(e) {
-        // 移动端触摸优化
-      }, { passive: true });
-
-      console.log('🦆 YajijiOracle · 鸭吉吉答案之书已开启。');
     })();
   </script>
 </body>
