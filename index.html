@@ -11,55 +11,49 @@
       box-sizing: border-box;
     }
 
-    /* ========== 加载动画 ========== */
+    /* ========== 加载弹窗 ========== */
     .loading-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #000;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.6s ease;
+      transition: opacity 0.5s ease;
     }
     .loading-overlay.hidden {
       opacity: 0;
       pointer-events: none;
     }
-    .loading-content {
+    .loading-dialog {
+      background: rgba(10, 10, 10, 0.94);
+      border: 1px solid rgba(200, 180, 100, 0.2);
+      border-radius: 2rem;
+      padding: 2rem 2.2rem;
+      max-width: 280px;
+      width: 80%;
       text-align: center;
-      max-width: 300px;
-      width: 85%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+    }
+    .loading-duck {
+      font-size: 2.2rem;
+      margin-bottom: 0.6rem;
     }
     .loading-title {
       font-family: "Noto Serif SC", "Times New Roman", "宋体", serif;
-      font-size: 1.6rem;
+      font-size: 1.2rem;
       background: linear-gradient(180deg, #ebd79c 0%, #9b8a5a 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 0.4rem;
+      margin-bottom: 1.6rem;
       letter-spacing: 0.15em;
-    }
-    .loading-subtitle {
-      color: #5a5440;
-      font-size: 0.75rem;
-      letter-spacing: 0.4em;
-      text-transform: uppercase;
-      margin-bottom: 2.2rem;
-    }
-    .loading-duck {
-      font-size: 2.6rem;
-      margin-bottom: 2rem;
-      animation: pulse-duck 1.4s ease-in-out infinite;
-    }
-    @keyframes pulse-duck {
-      0%, 100% { transform: scale(1); opacity: 0.6; }
-      50% { transform: scale(1.08); opacity: 1; }
     }
     .progress-track {
       width: 100%;
@@ -77,8 +71,8 @@
     }
     .progress-text {
       color: #7a6e4a;
-      font-size: 0.8rem;
-      margin-top: 0.7rem;
+      font-size: 0.75rem;
+      margin-top: 0.6rem;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.15em;
     }
@@ -287,12 +281,11 @@
   <!-- 版本号 -->
   <div class="version-tag">v 0.0.4</div>
 
-  <!-- 加载遮罩层 -->
+  <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-content">
+    <div class="loading-dialog">
       <div class="loading-duck">🦆</div>
-      <div class="loading-title">鸭吉吉答案之书</div>
-      <div class="loading-subtitle">YAJIJIORACLE</div>
+      <div class="loading-title">加载中...</div>
       <div class="progress-track">
         <div class="progress-fill" id="progressFill"></div>
       </div>
@@ -303,7 +296,7 @@
     
     <!-- 中央MP4视频区域 -->
     <div class="video-container">
-      <video loop muted playsinline id="mainVideo" preload="auto" src="mp4/ya.mp4"></video>
+      <video loop muted playsinline id="mainVideo" preload="auto" src="mp4/ya.mp4" webkit-playsinline></video>
     </div>
 
     <!-- 提示词：内心想一个问题，鸭吉吉会给你回复 -->
@@ -336,71 +329,20 @@
       const progressText = document.getElementById('progressText');
       const video = document.getElementById('mainVideo');
 
-      async function loadVideo() {
-        // 检测 fetch 是否可用（非 file:// 协议）
-        var useFetch = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-
-        if (useFetch) {
-          try {
-            var response = await fetch('mp4/ya.mp4');
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-
-            var contentLength = +response.headers.get('Content-Length');
-            var reader = response.body.getReader();
-            var chunks = [];
-            var received = 0;
-            var shown = false;
-
-            while (true) {
-              var result = await reader.read();
-              if (result.done) break;
-              chunks.push(result.value);
-              received += result.value.length;
-              var pct = Math.min(100, Math.round((received / contentLength) * 100));
-              progressFill.style.width = pct + '%';
-              progressText.textContent = pct + '%';
-
-              if (!shown && pct >= 20) {
-                shown = true;
-                showPage();
-              }
-            }
-
-            var blob = new Blob(chunks, { type: 'video/mp4' });
-            var url = URL.createObjectURL(blob);
-            video.src = url;
-            try { await video.play(); } catch (_) {}
-            if (!shown) showPage();
-            return;
-          } catch (_) {
-            // fetch 失败，回退到原生加载
-          }
-        }
-
-        // ---- 原生加载（fetch 不可用时，如 file://） ----
+      function loadVideo() {
         var shown = false;
-        var safetyTimer = setTimeout(function() { if (!shown) { shown = true; showPage(); } }, 20000);
+        var safetyTimer = setTimeout(function() { if (!shown) { shown = true; showPage(); } }, 15000);
 
-        function onProgress() {
+        function updateProgress() {
           var pct = 0;
           if (video.buffered.length > 0 && video.duration > 0) {
             pct = Math.min(100, Math.round((video.buffered.end(video.buffered.length - 1) / video.duration) * 100));
-          } else {
-            var elapsed = (Date.now() - startTime) / 1000;
-            pct = Math.min(80, Math.round(elapsed * 3));
           }
           progressFill.style.width = pct + '%';
           progressText.textContent = pct + '%';
-
-          if (!shown && pct >= 20) {
-            shown = true;
-            clearTimeout(safetyTimer);
-            showPage();
-          }
         }
 
-        var startTime = Date.now();
-        video.addEventListener('progress', onProgress);
+        // 等视频可以播放了就关弹窗
         video.addEventListener('canplay', function() {
           if (!shown) {
             shown = true;
@@ -410,7 +352,8 @@
             showPage();
           }
         });
-        video.addEventListener('loadedmetadata', onProgress);
+
+        // 加载失败也关弹窗，用户还能用答案功能
         video.addEventListener('error', function() {
           if (!shown) {
             shown = true;
@@ -421,7 +364,27 @@
           }
         });
 
-        setTimeout(function() { video.play().catch(function() { video.muted = true; video.play().catch(function() {}); }); }, 100);
+        // 进度更新
+        video.addEventListener('progress', updateProgress);
+        video.addEventListener('loadedmetadata', updateProgress);
+
+        // 尝试播放（手机端需要 muted + 用户手势，这里先试自动播放）
+        var playAttempt = function() {
+          var promise = video.play();
+          if (promise) {
+            promise.catch(function() {
+              video.muted = true;
+              video.play().catch(function() {});
+            });
+          }
+        };
+
+        if (video.readyState >= 2) {
+          // 视频已经可以播了
+          playAttempt();
+        } else {
+          video.addEventListener('canplay', playAttempt, { once: true });
+        }
       }
 
       var pageShown = false;
