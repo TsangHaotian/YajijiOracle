@@ -88,7 +88,7 @@
       align-items: center;
     }
 
-    /* ========== 中央动画区域 ========== */
+    /* ========== 动画展示区 ========== */
     .video-container {
       width: 100%; max-width: 480px;
       margin: 0 auto 2.5rem auto;
@@ -100,33 +100,14 @@
       background: radial-gradient(ellipse at center, rgba(30,22,5,0.95) 0%, #000 100%);
       position: relative;
     }
-    /* 加载中占位 */
-    .video-container::before {
-      content: '🦆';
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      font-size: 2.4rem;
-      opacity: 0.12;
-      z-index: 0;
-      animation: placeholder-pulse 2.4s ease-in-out infinite;
-      pointer-events: none;
-    }
-    @keyframes placeholder-pulse {
-      0%,100% { opacity: 0.08; transform: translate(-50%,-50%) scale(1); }
-      50%     { opacity: 0.20; transform: translate(-50%,-50%) scale(1.08); }
-    }
     .video-container video,
     .video-container img {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: contain;
+      display: block;
     }
-    /* 背景GIF：顶层常亮循环 */
-    .bg-gif { z-index: 2; display: block; }
-    /* 动作GIF：底层常驻，点击由JS控制z-index浮到顶层 */
-    .gif-overlay { z-index: 1; display: block; }
 
     .prompt-text {
       color: #d4c094;
@@ -251,9 +232,9 @@
   </style>
 </head>
 <body>
-  <div class="version-tag">v 1.0.5</div>
+  <div class="version-tag">v 1.0.7</div>
 
-  <!-- 加载弹窗（极简等待） -->
+  <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-dialog">
       <div class="loading-duck">🦆</div>
@@ -266,10 +247,10 @@
   </div>
 
   <div class="book-container">
-    <!-- 中央动画区 -->
+    <!-- 展示区：tiao.gif 直接显示 -->
     <div class="video-container">
-      <img src="mp4/ya.gif" class="bg-gif" id="bgGif" alt="">
-      <img src="mp4/tiao.gif" class="gif-overlay" id="tiaoGif" alt="">
+      <video autoplay loop muted playsinline id="displayVideo" preload="auto" src="mp4/ya1.mp4"
+             webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false">您的浏览器不支持视频播放</video>
     </div>
 
     <div class="prompt-text">
@@ -293,12 +274,9 @@
       const loadingOverlay = document.getElementById('loadingOverlay');
       const progressFill = document.getElementById('progressFill');
       const progressText = document.getElementById('progressText');
-      const tiaoGif = document.getElementById('tiaoGif');
-      const bgGif = document.getElementById('bgGif');
       const getAnswerBtn = document.getElementById('getAnswerBtn');
 
-      // ========== 预加载：视频 + GIF 同时加载 ==========
-      var loaded = false;
+      // ========== 轻量预加载 ==========
       var pageShown = false;
 
       function showPage() {
@@ -309,7 +287,7 @@
         window.addEventListener('keydown', function(e) {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGetAnswer(); }
         });
-        console.log('🦆 YajijiOracle v1.0.1 已开启。');
+        console.log('🦆 YajijiOracle v1.0.7 已开启。');
       }
 
       function updateProgress(pct) {
@@ -317,25 +295,23 @@
         progressText.textContent = pct + '%';
       }
 
-      // 保底：3 秒自动显示
+      // 保底：2 秒自动显示
       var safetyTimer = setTimeout(function() {
         updateProgress(100);
         if (!pageShown) showPage();
-      }, 3000);
+      }, 2000);
 
-      // 预加载 tiaoGif（动作GIF）
-      var preloadImg = new Image();
-      function onPreloadDone() {
+      // 背景视频：准备就绪后显示页面
+      const displayVideo = document.getElementById('displayVideo');
+      displayVideo.addEventListener('canplay', function() {
         updateProgress(100);
-        if (!loaded) { loaded = true; clearTimeout(safetyTimer); showPage(); }
-      }
-      preloadImg.onload = onPreloadDone;
-      preloadImg.onerror = onPreloadDone;
-      preloadImg.src = tiaoGif.src;
-      tiaoGif.src = tiaoGif.src;
-
-      // 触发背景GIF加载
-      bgGif.src = bgGif.src;
+        if (!pageShown) { clearTimeout(safetyTimer); showPage(); }
+      }, { once: true });
+      displayVideo.addEventListener('error', function() {
+        updateProgress(100);
+        if (!pageShown) { clearTimeout(safetyTimer); showPage(); }
+      }, { once: true });
+      displayVideo.play().catch(function(){});
 
       // ========== 答案系统 ==========
       const answers = [
@@ -377,9 +353,9 @@
         var cy = rect.top + rect.height/2;
         var colors = ['#ff0040','#ff8c00','#ffe600','#66ff00','#00ffcc','#0066ff','#6600ff','#ff00cc','#ff88aa','#ffcc00','#00ff00','#ff00ff','#ffffff'];
 
-        for (var i = 0; i < 80; i++) {
+        for (var i = 0; i < 20; i++) {
           var el = document.createElement('div');
-          var isStreamer = i > 60 && Math.random() > 0.4;
+          var isStreamer = i > 15 && Math.random() > 0.4;
           var size = 3 + Math.random() * 6;
           var color = colors[Math.floor(Math.random() * colors.length)];
           el.style.cssText = [
@@ -435,16 +411,6 @@
 
         playChime();
         createConfetti();
-
-        // tiao GIF 浮到顶层，背景GIF沉到底层
-        tiaoGif.style.zIndex = '10';
-        bgGif.style.zIndex = '1';
-        tiaoGif.src = tiaoGif.src.split('?')[0] + '?t=' + Date.now();
-        // 播完背景GIF切回顶层
-        setTimeout(function() {
-          tiaoGif.style.zIndex = '1';
-          bgGif.style.zIndex = '2';
-        }, 2500);
 
         setTimeout(function() { isAnimating = false; }, 600);
         getAnswerBtn.style.transform = 'scale(0.96)';
