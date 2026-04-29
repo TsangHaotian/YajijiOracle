@@ -347,8 +347,32 @@
         }, 4000);
       }
 
+      var clickCount = 0;
+      var clickResetTimer = null;
+      var tooFastMsg = '🦆 鸭吉吉快被你戳死了\n手速慢点吧...';
+
       function petClickHandler() {
+        // 快速连点检测
+        clickCount++;
+        if (clickResetTimer) clearTimeout(clickResetTimer);
+        clickResetTimer = setTimeout(function() { clickCount = 0; clickResetTimer = null; }, 2000);
+
         petBounce();
+
+        if (clickCount >= 3 && isAnimating) {
+          // 手速太快：弹出警告
+          isAnimating = true;
+          answerTextElement.classList.remove('answer-placeholder','answer-appear');
+          answerTextElement.textContent = '🙏';
+          // 用 setTimeout 分两段显示，模拟打字
+          setTimeout(function() {
+            answerTextElement.textContent = tooFastMsg;
+            answerTextElement.classList.add('answer-appear');
+            setTimeout(function() { isAnimating = false; }, 2000);
+          }, 200);
+          return;
+        }
+
         handleGetAnswer();
       }
 
