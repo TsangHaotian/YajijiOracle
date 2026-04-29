@@ -252,6 +252,22 @@
       opacity: 0.6;
     }
 
+    /* 炫彩答案发光 */
+    @keyframes glow-rainbow {
+      0%   { text-shadow: 0 0 8px #ff0040, 0 0 25px #ff004066, 0 0 50px #ff004033; }
+      12%  { text-shadow: 0 0 8px #ff8c00, 0 0 25px #ff8c0066, 0 0 50px #ff8c0033; }
+      25%  { text-shadow: 0 0 8px #ffe600, 0 0 25px #ffe60066, 0 0 50px #ffe60033; }
+      37%  { text-shadow: 0 0 8px #66ff00, 0 0 25px #66ff0066, 0 0 50px #66ff0033; }
+      50%  { text-shadow: 0 0 8px #00ffcc, 0 0 25px #00ffcc66, 0 0 50px #00ffcc33; }
+      62%  { text-shadow: 0 0 8px #0066ff, 0 0 25px #0066ff66, 0 0 50px #0066ff33; }
+      75%  { text-shadow: 0 0 8px #6600ff, 0 0 25px #6600ff66, 0 0 50px #6600ff33; }
+      87%  { text-shadow: 0 0 8px #ff00cc, 0 0 25px #ff00cc66, 0 0 50px #ff00cc33; }
+      100% { text-shadow: 0 0 8px #ff0040, 0 0 25px #ff004066, 0 0 50px #ff004033; }
+    }
+    .answer-colorful {
+      animation: glow-rainbow 1.6s ease-out forwards;
+    }
+
     @media (max-width: 500px) {
       .book-container {
         padding: 1.5rem 0.8rem;
@@ -279,7 +295,7 @@
 </head>
 <body>
   <!-- 版本号 -->
-  <div class="version-tag">v 0.0.4</div>
+  <div class="version-tag">v 0.0.5</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -428,19 +444,65 @@
         return answers[Math.floor(Math.random() * answers.length)];
       }
 
+      function playChime() {
+        try {
+          var audio = new Audio('audio/click.mp3');
+          audio.volume = 0.5;
+          audio.play().catch(function() {});
+        } catch(e) {}
+      }
+
+      function createConfetti() {
+        var rect = answerDisplay.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var colors = ['#ff0040','#ff8c00','#ffe600','#66ff00','#00ffcc','#0066ff','#6600ff','#ff00cc','#ff6699','#ffcc00'];
+
+        for (var i = 0; i < 50; i++) {
+          var el = document.createElement('div');
+          var size = 4 + Math.random() * 6;
+          el.style.cssText = [
+            'position:fixed',
+            'width:' + size + 'px',
+            'height:' + size + 'px',
+            'background:' + colors[Math.floor(Math.random() * colors.length)],
+            'border-radius:' + (Math.random() > 0.5 ? '50%' : '2px'),
+            'pointer-events:none',
+            'z-index:1000',
+            'left:' + cx + 'px',
+            'top:' + cy + 'px'
+          ].join(';');
+          document.body.appendChild(el);
+
+          var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+          var dist = 80 + Math.random() * 180;
+          var dx = Math.cos(angle) * dist;
+          var dy = Math.sin(angle) * dist - 40;
+
+          el.animate([
+            { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
+            { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(0.2) rotate(' + (Math.random() * 720 - 360) + 'deg)', opacity: 0 }
+          ], {
+            duration: 700 + Math.random() * 500,
+            easing: 'cubic-bezier(0,0.8,0.5,1)',
+            fill: 'forwards'
+          }).onfinish = function() { el.remove(); };
+        }
+      }
+
       function setAnswerWithEffect(answer) {
         if (animationTimer) clearTimeout(animationTimer);
         answerTextElement.classList.remove('answer-placeholder');
         answerTextElement.textContent = answer;
         answerTextElement.style.transition = 'opacity 0.2s ease';
         answerTextElement.style.opacity = '0.4';
-        animationTimer = setTimeout(() => {
+        animationTimer = setTimeout(function() {
           answerTextElement.style.opacity = '1';
           animationTimer = null;
         }, 60);
         answerDisplay.style.transition = 'box-shadow 0.25s';
         answerDisplay.style.boxShadow = 'inset 0 0 45px rgba(220, 180, 30, 0.5), 0 0 30px #b4942e';
-        setTimeout(() => {
+        setTimeout(function() {
           answerDisplay.style.boxShadow = 'inset 0 0 35px rgba(20, 15, 0, 0.9), 0 8px 20px rgba(0,0,0,0.8)';
         }, 250);
       }
@@ -450,12 +512,18 @@
           if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
         }
         isAnimating = true;
-        const newAnswer = getRandomAnswer();
-        answerTextElement.classList.remove('answer-placeholder');
+        var newAnswer = getRandomAnswer();
+        answerTextElement.classList.remove('answer-placeholder', 'answer-colorful');
         setAnswerWithEffect(newAnswer);
-        setTimeout(() => { isAnimating = false; }, 200);
+        void answerTextElement.offsetWidth; // force reflow
+        answerTextElement.classList.add('answer-colorful');
+
+        playChime();
+        createConfetti();
+
+        setTimeout(function() { isAnimating = false; }, 300);
         getAnswerBtn.style.transform = 'scale(0.96)';
-        setTimeout(() => { getAnswerBtn.style.transform = ''; }, 120);
+        setTimeout(function() { getAnswerBtn.style.transform = ''; }, 120);
       }
 
       // ========== 启动 ==========
