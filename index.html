@@ -371,7 +371,6 @@
       <video autoplay loop muted playsinline id="bgVideo" preload="auto" src="mp4/ya.mp4"
              webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
       <img src="mp4/tiao.gif" class="gif-overlay" id="tiaoGif" alt="">
-      <img src="mp4/play.gif" class="gif-overlay" id="playGif" alt="">
     </div>
 
     <!-- 提示词：内心想一个问题，鸭吉吉会给你回复 -->
@@ -404,10 +403,9 @@
       const progressText = document.getElementById('progressText');
       const bgVideo = document.getElementById('bgVideo');
       const tiaoGif = document.getElementById('tiaoGif');
-      const playGif = document.getElementById('playGif');
 
       function loadAll() {
-        var total = 3; // 1 video + 2 gifs
+        var total = 2; // 1 video + 1 gif
         var loaded = 0;
         var shown = false;
         var safetyTimer = setTimeout(function() { if (!shown) { shown = true; showPage(); } }, 15000);
@@ -434,14 +432,11 @@
         if (bgVideo.readyState >= 3) onOneLoaded();
 
         // 动作 GIF：Image 预加载
-        [tiaoGif, playGif].forEach(function(el) {
-          var img = new Image();
-          img.onload = onOneLoaded;
-          img.onerror = onOneLoaded;
-          img.src = el.src;
-          // DOM img 共享浏览器缓存
-          el.src = el.src;
-        });
+        var img = new Image();
+        img.onload = onOneLoaded;
+        img.onerror = onOneLoaded;
+        img.src = tiaoGif.src;
+        tiaoGif.src = tiaoGif.src;
       }
 
       var pageShown = false;
@@ -572,16 +567,13 @@
         playChime();
         createConfetti();
 
-        // 随机触发动作 GIF（tiao / play）
-        var actionGif = Math.random() > 0.5 ? tiaoGif : playGif;
-        var duration = actionGif === tiaoGif ? 2500 : 3500;
-        // 加时间戳强制 GIF 从头播放
-        actionGif.src = actionGif.src.split('?')[0] + '?t=' + Date.now();
-        actionGif.style.display = 'block';
+        // 触发 tiao GIF
+        tiaoGif.src = tiaoGif.src.split('?')[0] + '?t=' + Date.now();
+        tiaoGif.style.display = 'block';
 
         setTimeout(function() {
-          actionGif.style.display = 'none';
-        }, duration);
+          tiaoGif.style.display = 'none';
+        }, 2500);
 
         setTimeout(function() { isAnimating = false; }, 600);
         getAnswerBtn.style.transform = 'scale(0.96)';
