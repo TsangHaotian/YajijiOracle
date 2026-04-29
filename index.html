@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=1.5">
+  <title>鸭吉吉答案之书 · YajijiOracle</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #000000;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Noto Serif SC", "Times New Roman", "宋体", "仿宋", "Georgia", "楷体", serif;
+      padding: 1.5rem;
+      margin: 0;
+      background: radial-gradient(circle at center, #0a0a0a 0%, #000000 90%);
+    }
+
+    .book-container {
+      max-width: 700px;
+      width: 100%;
+      background: rgba(10, 10, 10, 0.75);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 200, 0.08);
+      border-radius: 3.5rem 3.5rem 2.8rem 2.8rem;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(220, 200, 120, 0.15) inset;
+      padding: 2.8rem 2.2rem 2.8rem 2.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .video-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto 2.5rem auto;
+      aspect-ratio: 16 / 9;
+      border-radius: 2.2rem;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(180, 150, 70, 0.2);
+      border: 1px solid rgba(200, 180, 100, 0.25);
+      background: #000;
+    }
+
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .prompt-text {
+      color: #d4c094;
+      font-size: 1.2rem;
+      letter-spacing: 0.25em;
+      text-shadow: 0 0 15px #1a1608;
+      margin-bottom: 2rem;
+      font-weight: 350;
+      text-align: center;
+      line-height: 1.7;
+      background: linear-gradient(180deg, #ebd79c 0%, #9b8a5a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      border-bottom: 1px dashed rgba(190, 160, 70, 0.3);
+      padding-bottom: 0.8rem;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .duck-name {
+      font-weight: 600;
+      background: linear-gradient(135deg, #f3e1a4, #c9a84b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 1.3rem;
+    }
+
+    .answer-display {
+      width: 100%;
+      min-height: 130px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(200, 170, 70, 0.35);
+      border-radius: 2.5rem;
+      margin: 0.6rem 0 2.2rem 0;
+      padding: 1.8rem 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #f7efcc;
+      font-size: 1.8rem;
+      font-weight: 420;
+      letter-spacing: 0.12em;
+      line-height: 1.5;
+      text-shadow: 0 0 20px #9b8a4a;
+      box-shadow: inset 0 0 35px rgba(20, 15, 0, 0.9), 0 8px 20px rgba(0,0,0,0.8);
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1);
+      word-break: break-word;
+      background-image: radial-gradient(circle at 20% 30%, rgba(70, 60, 20, 0.3) 0%, transparent 50%);
+    }
+
+    .answer-placeholder {
+      color: #5a5440;
+      font-size: 1.3rem;
+      letter-spacing: 0.2em;
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    .get-answer-btn {
+      background: #0f0e08;
+      border: 1.5px solid #c4a64b;
+      color: #ecd994;
+      font-size: 1.3rem;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      padding: 0.9rem 2.8rem;
+      border-radius: 3rem;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(18, 16, 5, 0.7);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.7), 0 0 18px rgba(190, 150, 30, 0.3);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      margin-top: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .get-answer-btn:hover {
+      background: rgba(30, 25, 8, 0.8);
+      border-color: #e7c45e;
+      color: #fcedb3;
+      box-shadow: 0 0 35px rgba(210, 160, 20, 0.6), 0 8px 22px black;
+      transform: scale(1.02);
+      letter-spacing: 0.35em;
+    }
+
+    .get-answer-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 0 45px #b4942e;
+      background: #1f1a08;
+    }
+
+    .duck-icon {
+      font-size: 1.6rem;
+      filter: drop-shadow(0 0 8px gold);
+    }
+
+    .footnote {
+      margin-top: 1.8rem;
+      color: #4a432a;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 500px) {
+      .book-container {
+        padding: 2rem 1.2rem;
+        border-radius: 2.5rem;
+      }
+      .answer-display {
+        font-size: 1.4rem;
+        min-height: 110px;
+        padding: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="book-container">
+    
+    <!-- 中央MP4视频区域 -->
+    <div class="video-container">
+      <video autoplay loop muted playsinline>
+        <source src="mp4/ya.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <!-- 提示词：内心想一个问题，鸭吉吉会给你回复 -->
+    <div class="prompt-text">
+      <span class="duck-icon">🦆</span> 内心想一个问题 <br>
+      <span style="font-size:0.9rem; display:block; margin-top:0.2rem;">鸭吉吉会给你回复</span>
+    </div>
+
+    <!-- 答案显示区 -->
+    <div class="answer-display" id="answerDisplay">
+      <span class="answer-placeholder" id="answerText">静默思考中...</span>
+    </div>
+
+    <!-- 获取回答按钮 -->
+    <button class="get-answer-btn" id="getAnswerBtn">
+      <span>📖</span> 获取回答 <span>📖</span>
+    </button>
+
+    <!-- 脚注更新为YajijiOracle -->
+    <div class="footnote">
+      ◈ YajijiOracle · 鸭吉吉答案之书 ◈
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const answers = [
+        "是的，毫无疑问。",
+        "鸭吉吉说：时机未到。",
+        "相信你的直觉。",
+        "不要犹豫，去吧。",
+        "答案就在你心中。",
+        "再等一等，涟漪会平静。",
+        "它已经在路上了。",
+        "保持好奇心。",
+        "换个角度看看。",
+        "鸭吉吉点头：当然。",
+        "别想太多，顺其自然。",
+        "也许你应该放手。",
+        "这将是一个惊喜。",
+        "值得冒险一试。",
+        "倾听内心的声音。",
+        "很快就会有答案。",
+        "鸭吉吉摇头：未必。",
+        "你需要更多耐心。",
+        "结果是积极的。",
+        "暂时保持沉默。",
+        "对，但方式可能不同。",
+        "命运站在你这边。",
+        "不要强求。",
+        "享受过程吧。",
+        "它会以奇妙的方式出现。",
+        "鸭吉吉认为：可行。",
+        "小心过于乐观。",
+        "先完成手头的事。",
+        "宇宙在为你布局。",
+        "平凡中藏有答案。",
+        "勇敢一点。",
+        "等待更好的时机。",
+        "答案是模糊的，再问一次。",
+        "鸭吉吉微笑：如你所愿。",
+        "改变正在发生。",
+        "专注当下。",
+        "别被表象迷惑。",
+        "你早已知道答案。",
+        "水到渠成。",
+        "或许需要他人帮助。"
+      ];
+
+      const answerDisplay = document.getElementById('answerDisplay');
+      const answerTextElement = document.getElementById('answerText');
+      const getAnswerBtn = document.getElementById('getAnswerBtn');
+
+      let isAnimating = false;
+      let animationTimer = null;
+
+      function getRandomAnswer() {
+        const randomIndex = Math.floor(Math.random() * answers.length);
+        return answers[randomIndex];
+      }
+
+      function setAnswerWithEffect(answer) {
+        if (animationTimer) {
+          clearTimeout(animationTimer);
+        }
+
+        if (answerTextElement.classList.contains('answer-placeholder')) {
+          answerTextElement.classList.remove('answer-placeholder');
+        }
+        
+        answerTextElement.textContent = answer;
+        
+        answerTextElement.style.transition = 'opacity 0.2s ease';
+        answerTextElement.style.opacity = '0.4';
+        
+        animationTimer = setTimeout(() => {
+          answerTextElement.style.opacity = '1';
+          animationTimer = null;
+        }, 60);
+        
+        answerDisplay.style.transition = 'box-shadow 0.25s';
+        answerDisplay.style.boxShadow = 'inset 0 0 45px rgba(220, 180, 30, 0.5), 0 0 30px #b4942e';
+        setTimeout(() => {
+          answerDisplay.style.boxShadow = 'inset 0 0 35px rgba(20, 15, 0, 0.9), 0 8px 20px rgba(0,0,0,0.8)';
+        }, 250);
+      }
+
+      function handleGetAnswer() {
+        if (isAnimating) {
+          if (animationTimer) {
+            clearTimeout(animationTimer);
+            animationTimer = null;
+          }
+        }
+        
+        isAnimating = true;
+        
+        const newAnswer = getRandomAnswer();
+        
+        if (answerTextElement.classList.contains('answer-placeholder')) {
+          answerTextElement.classList.remove('answer-placeholder');
+        }
+        
+        setAnswerWithEffect(newAnswer);
+        
+        setTimeout(() => {
+          isAnimating = false;
+        }, 200);
+        
+        getAnswerBtn.style.transform = 'scale(0.96)';
+        setTimeout(() => {
+          getAnswerBtn.style.transform = '';
+        }, 120);
+      }
+
+      getAnswerBtn.addEventListener('click', handleGetAnswer);
+
+      window.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleGetAnswer();
+        }
+      });
+
+      getAnswerBtn.addEventListener('touchstart', function(e) {
+        // 移动端触摸优化
+      }, { passive: true });
+
+      console.log('🦆 YajijiOracle · 鸭吉吉答案之书已开启。');
+    })();
+  </script>
+</body>
+</html>
