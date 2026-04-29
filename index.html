@@ -344,7 +344,7 @@
 </head>
 <body>
   <!-- 版本号 -->
-  <div class="version-tag">v 0.0.8</div>
+  <div class="version-tag">v 0.0.9</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -493,6 +493,7 @@
 
       let isAnimating = false;
       let animationTimer = null;
+      let isVideoJumping = false;
 
       function getRandomAnswer() {
         return answers[Math.floor(Math.random() * answers.length)];
@@ -559,10 +560,10 @@
       }
 
       function handleGetAnswer() {
-        if (isAnimating) {
-          if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
-        }
+        if (isAnimating || isVideoJumping) return;
+        if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
         isAnimating = true;
+        isVideoJumping = true;
         var newAnswer = getRandomAnswer();
 
         // 清除旧动画状态
@@ -582,10 +583,26 @@
         playChime();
         createConfetti();
 
-        // 微信浏览器经常暂停视频，用户点击时恢复
-        if (video.paused) {
+        // 切换鸭子跳视频
+        var originalLoop = video.loop;
+        video.loop = false;
+        video.src = 'mp4/tiao.mp4';
+        video.load();
+        var p = video.play();
+        if (p) p.catch(function() {});
+
+        function switchBack() {
+          isVideoJumping = false;
+          video.loop = true;
+          video.src = 'mp4/ya.mp4';
+          video.load();
           video.play().catch(function() {});
         }
+        video.addEventListener('ended', switchBack, { once: true });
+        var fallbackTimer = setTimeout(function() {
+          video.removeEventListener('ended', switchBack);
+          switchBack();
+        }, 3500);
 
         setTimeout(function() { isAnimating = false; }, 600);
         getAnswerBtn.style.transform = 'scale(0.96)';
