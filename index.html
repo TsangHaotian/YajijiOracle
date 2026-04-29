@@ -125,9 +125,8 @@
     }
     /* 背景视频：顶层常亮循环 */
     .bg-video { z-index: 2; }
-    /* 动作GIF：底层常驻，点击浮到顶层 */
+    /* 动作GIF：底层常驻，点击由JS控制z-index浮到顶层 */
     .gif-overlay { z-index: 1; display: block; }
-    .gif-overlay.rising { z-index: 10; }
 
     .prompt-text {
       color: #d4c094;
@@ -252,7 +251,7 @@
   </style>
 </head>
 <body>
-  <div class="version-tag">v 1.0.3</div>
+  <div class="version-tag">v 1.0.4</div>
 
   <!-- 加载弹窗（极简等待） -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -438,11 +437,15 @@
         playChime();
         createConfetti();
 
-        // tiao GIF 浮到顶层
-        tiaoGif.classList.add('rising');
+        // tiao GIF 浮到顶层，mp4 沉到底层
+        tiaoGif.style.zIndex = '10';
+        bgVideo.style.zIndex = '1';
         tiaoGif.src = tiaoGif.src.split('?')[0] + '?t=' + Date.now();
-        // 播完沉回底层
-        setTimeout(function() { tiaoGif.classList.remove('rising'); }, 2500);
+        // 播完 mp4 切回顶层
+        setTimeout(function() {
+          tiaoGif.style.zIndex = '1';
+          bgVideo.style.zIndex = '2';
+        }, 2500);
 
         setTimeout(function() { isAnimating = false; }, 600);
         getAnswerBtn.style.transform = 'scale(0.96)';
