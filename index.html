@@ -345,6 +345,7 @@
           const reader = response.body.getReader();
           const chunks = [];
           let received = 0;
+          let shown = false;
 
           while (true) {
             const { done, value } = await reader.read();
@@ -354,19 +355,41 @@
             const pct = Math.min(100, Math.round((received / contentLength) * 100));
             progressFill.style.width = pct + '%';
             progressText.textContent = pct + '%';
+
+            // 加载到 20% 就显示主页，不用等全部下完
+            if (!shown && pct >= 20) {
+              shown = true;
+              showPage();
+            }
           }
 
           const blob = new Blob(chunks, { type: 'video/mp4' });
           const url = URL.createObjectURL(blob);
           video.src = url;
-          await video.play();
+          video.play().catch(function() {});
+
+          if (!shown) showPage();
         } catch (err) {
           // 降级：直接加载
           video.src = 'mp4/ya.mp4';
-          try { await video.play(); } catch (_) { video.muted = true; await video.play(); }
+          video.play().catch(function() { video.muted = true; video.play().catch(function() {}); });
           progressFill.style.width = '100%';
           progressText.textContent = '100%';
+          showPage();
         }
+      }
+
+      var pageShown = false;
+      function showPage() {
+        if (pageShown) return;
+        pageShown = true;
+        loadingOverlay.classList.add('hidden');
+        getAnswerBtn.addEventListener('click', handleGetAnswer);
+        window.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGetAnswer(); }
+        });
+        getAnswerBtn.addEventListener('touchstart', function() {}, { passive: true });
+        console.log('🦆 YajijiOracle · 鸭吉吉答案之书已开启。');
       }
 
       // ========== 答案系统 ==========
@@ -428,15 +451,7 @@
       }
 
       // ========== 启动 ==========
-      loadVideo().then(() => {
-        loadingOverlay.classList.add('hidden');
-        getAnswerBtn.addEventListener('click', handleGetAnswer);
-        window.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGetAnswer(); }
-        });
-        getAnswerBtn.addEventListener('touchstart', function() {}, { passive: true });
-        console.log('🦆 YajijiOracle · 鸭吉吉答案之书已开启。');
-      });
+      loadVideo();
     })();
   </script>
 </body>
