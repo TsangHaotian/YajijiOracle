@@ -117,13 +117,20 @@
       box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(180, 150, 70, 0.2);
       border: 1px solid rgba(200, 180, 100, 0.25);
       background: #000;
+      position: relative;
     }
 
     .video-container video {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: contain;
       display: block;
+    }
+    #jumpVideo {
+      display: none;
     }
 
     .prompt-text {
@@ -344,7 +351,7 @@
 </head>
 <body>
   <!-- 版本号 -->
-  <div class="version-tag">v 0.0.9</div>
+  <div class="version-tag">v 0.1.0</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -362,6 +369,8 @@
     <!-- 中央MP4视频区域 -->
     <div class="video-container">
       <video loop muted playsinline id="mainVideo" preload="auto" src="mp4/ya.mp4"
+             webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
+      <video muted playsinline id="jumpVideo" preload="auto" src="mp4/tiao.mp4"
              webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
     </div>
 
@@ -394,6 +403,7 @@
       const progressFill = document.getElementById('progressFill');
       const progressText = document.getElementById('progressText');
       const video = document.getElementById('mainVideo');
+      const jumpVideo = document.getElementById('jumpVideo');
 
       function loadVideo() {
         var shown = false;
@@ -583,25 +593,20 @@
         playChime();
         createConfetti();
 
-        // 切换鸭子跳视频
-        var originalLoop = video.loop;
-        video.loop = false;
-        video.src = 'mp4/tiao.mp4';
-        video.load();
-        var p = video.play();
-        if (p) p.catch(function() {});
+        // 显示鸭子跳视频（主视频保持播放不中断）
+        jumpVideo.currentTime = 0;
+        jumpVideo.style.display = 'block';
+        jumpVideo.play().catch(function() {});
 
-        function switchBack() {
+        function hideJump() {
           isVideoJumping = false;
-          video.loop = true;
-          video.src = 'mp4/ya.mp4';
-          video.load();
-          video.play().catch(function() {});
+          jumpVideo.pause();
+          jumpVideo.style.display = 'none';
         }
-        video.addEventListener('ended', switchBack, { once: true });
+        jumpVideo.addEventListener('ended', hideJump, { once: true });
         var fallbackTimer = setTimeout(function() {
-          video.removeEventListener('ended', switchBack);
-          switchBack();
+          jumpVideo.removeEventListener('ended', hideJump);
+          hideJump();
         }, 3500);
 
         setTimeout(function() { isAnimating = false; }, 600);
