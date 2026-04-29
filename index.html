@@ -238,6 +238,18 @@
       filter: drop-shadow(0 0 8px gold);
     }
 
+    .version-tag {
+      position: fixed;
+      top: 12px;
+      left: 16px;
+      color: rgba(220, 200, 120, 0.35);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      font-family: "Courier New", monospace;
+      z-index: 1;
+      user-select: none;
+    }
+
     .footnote {
       margin-top: 1.8rem;
       color: #4a432a;
@@ -272,6 +284,9 @@
   </style>
 </head>
 <body>
+  <!-- 版本号 -->
+  <div class="version-tag">v 0.0.2</div>
+
   <!-- 加载遮罩层 -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-content">
