@@ -303,7 +303,7 @@
     
     <!-- 中央MP4视频区域 -->
     <div class="video-container">
-      <video loop muted playsinline id="mainVideo"></video>
+      <video loop muted playsinline id="mainVideo" preload="auto" src="mp4/ya.mp4"></video>
     </div>
 
     <!-- 提示词：内心想一个问题，鸭吉吉会给你回复 -->
@@ -337,46 +337,91 @@
       const video = document.getElementById('mainVideo');
 
       async function loadVideo() {
-        try {
-          const response = await fetch('mp4/ya.mp4');
-          if (!response.ok) throw new Error('HTTP ' + response.status);
+        // 检测 fetch 是否可用（非 file:// 协议）
+        var useFetch = window.location.protocol === 'http:' || window.location.protocol === 'https:';
 
-          const contentLength = +response.headers.get('Content-Length');
-          const reader = response.body.getReader();
-          const chunks = [];
-          let received = 0;
-          let shown = false;
+        if (useFetch) {
+          try {
+            var response = await fetch('mp4/ya.mp4');
+            if (!response.ok) throw new Error('HTTP ' + response.status);
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            received += value.length;
-            const pct = Math.min(100, Math.round((received / contentLength) * 100));
-            progressFill.style.width = pct + '%';
-            progressText.textContent = pct + '%';
+            var contentLength = +response.headers.get('Content-Length');
+            var reader = response.body.getReader();
+            var chunks = [];
+            var received = 0;
+            var shown = false;
 
-            // 加载到 20% 就显示主页，不用等全部下完
-            if (!shown && pct >= 20) {
-              shown = true;
-              showPage();
+            while (true) {
+              var result = await reader.read();
+              if (result.done) break;
+              chunks.push(result.value);
+              received += result.value.length;
+              var pct = Math.min(100, Math.round((received / contentLength) * 100));
+              progressFill.style.width = pct + '%';
+              progressText.textContent = pct + '%';
+
+              if (!shown && pct >= 20) {
+                shown = true;
+                showPage();
+              }
             }
+
+            var blob = new Blob(chunks, { type: 'video/mp4' });
+            var url = URL.createObjectURL(blob);
+            video.src = url;
+            try { await video.play(); } catch (_) {}
+            if (!shown) showPage();
+            return;
+          } catch (_) {
+            // fetch 失败，回退到原生加载
           }
-
-          const blob = new Blob(chunks, { type: 'video/mp4' });
-          const url = URL.createObjectURL(blob);
-          video.src = url;
-          video.play().catch(function() {});
-
-          if (!shown) showPage();
-        } catch (err) {
-          // 降级：直接加载
-          video.src = 'mp4/ya.mp4';
-          video.play().catch(function() { video.muted = true; video.play().catch(function() {}); });
-          progressFill.style.width = '100%';
-          progressText.textContent = '100%';
-          showPage();
         }
+
+        // ---- 原生加载（fetch 不可用时，如 file://） ----
+        var shown = false;
+        var safetyTimer = setTimeout(function() { if (!shown) { shown = true; showPage(); } }, 20000);
+
+        function onProgress() {
+          var pct = 0;
+          if (video.buffered.length > 0 && video.duration > 0) {
+            pct = Math.min(100, Math.round((video.buffered.end(video.buffered.length - 1) / video.duration) * 100));
+          } else {
+            var elapsed = (Date.now() - startTime) / 1000;
+            pct = Math.min(80, Math.round(elapsed * 3));
+          }
+          progressFill.style.width = pct + '%';
+          progressText.textContent = pct + '%';
+
+          if (!shown && pct >= 20) {
+            shown = true;
+            clearTimeout(safetyTimer);
+            showPage();
+          }
+        }
+
+        var startTime = Date.now();
+        video.addEventListener('progress', onProgress);
+        video.addEventListener('canplay', function() {
+          if (!shown) {
+            shown = true;
+            clearTimeout(safetyTimer);
+            progressFill.style.width = '100%';
+            progressText.textContent = '100%';
+            showPage();
+          }
+        });
+        video.addEventListener('loadedmetadata', onProgress);
+        video.addEventListener('error', function() {
+          if (!shown) {
+            shown = true;
+            clearTimeout(safetyTimer);
+            progressFill.style.width = '100%';
+            progressText.textContent = '100%';
+            showPage();
+          }
+        });
+
+        setTimeout(function() { video.play().catch(function() { video.muted = true; video.play().catch(function() {}); }); }, 100);
       }
 
       var pageShown = false;
