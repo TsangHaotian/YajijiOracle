@@ -295,7 +295,7 @@
 </head>
 <body>
   <!-- 版本号 -->
-  <div class="version-tag">v 0.0.5</div>
+  <div class="version-tag">v 0.0.6</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -312,7 +312,8 @@
     
     <!-- 中央MP4视频区域 -->
     <div class="video-container">
-      <video loop muted playsinline id="mainVideo" preload="auto" src="mp4/ya.mp4" webkit-playsinline></video>
+      <video loop muted playsinline id="mainVideo" preload="auto" src="mp4/ya.mp4"
+             webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
     </div>
 
     <!-- 提示词：内心想一个问题，鸭吉吉会给你回复 -->
@@ -437,6 +438,10 @@
       const answerTextElement = document.getElementById('answerText');
       const getAnswerBtn = document.getElementById('getAnswerBtn');
 
+      // 预创建音效（对微信等兼容）
+      var chimeAudio = new Audio('audio/click.mp3');
+      chimeAudio.preload = 'auto';
+
       let isAnimating = false;
       let animationTimer = null;
 
@@ -446,9 +451,8 @@
 
       function playChime() {
         try {
-          var audio = new Audio('audio/click.mp3');
-          audio.volume = 0.5;
-          audio.play().catch(function() {});
+          chimeAudio.currentTime = 0;
+          chimeAudio.play().catch(function() {});
         } catch(e) {}
       }
 
@@ -515,11 +519,16 @@
         var newAnswer = getRandomAnswer();
         answerTextElement.classList.remove('answer-placeholder', 'answer-colorful');
         setAnswerWithEffect(newAnswer);
-        void answerTextElement.offsetWidth; // force reflow
+        void answerTextElement.offsetWidth;
         answerTextElement.classList.add('answer-colorful');
 
         playChime();
         createConfetti();
+
+        // 微信浏览器经常暂停视频，用户点击时恢复
+        if (video.paused) {
+          video.play().catch(function() {});
+        }
 
         setTimeout(function() { isAnimating = false; }, 300);
         getAnswerBtn.style.transform = 'scale(0.96)';
