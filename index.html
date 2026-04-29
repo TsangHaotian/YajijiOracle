@@ -88,25 +88,47 @@
       align-items: center;
     }
 
-    /* ========== 动画展示区 ========== */
-    .video-container {
-      width: 100%; max-width: 480px;
+    /* ========== 宠物展示区（纯黑底） ========== */
+    .pet-scene {
+      width: 100%;
       margin: 0 auto 2.5rem auto;
-      aspect-ratio: 16 / 9;
-      border-radius: 2.2rem;
-      overflow: hidden;
-      box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 0 2px rgba(180,150,70,0.2);
-      border: 1px solid rgba(200,180,100,0.25);
-      background: radial-gradient(ellipse at center, rgba(30,22,5,0.95) 0%, #000 100%);
+      background: #000;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.8rem 0;
     }
-    .video-container video,
-    .video-container img {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: contain;
-      display: block;
+
+    /* ===== 宠物精灵 ===== */
+    .pet-character {
+      width: 280px; height: 280px;
+      background: url('assets/peace_strip.png') 0 0 no-repeat;
+      background-size: 18200px 280px;  /* 65帧 × 280px */
+      image-rendering: auto;
+      position: relative;
+      z-index: 2;
+      cursor: pointer;
+      animation: pet-peace 6.5s steps(65) infinite;
+    }
+    @keyframes pet-peace {
+      0%   { background-position: 0 0; }
+      100% { background-position: -18200px 0; }
+    }
+    /* 宠物跳起动画（点击/回答触发） */
+    .pet-character.jump {
+      background-image: url('assets/jump_strip.png');
+      background-size: 13440px 280px;  /* 48帧 × 280px */
+      animation: pet-jump 4s steps(48) forwards;
+    }
+    @keyframes pet-jump {
+      0%   { background-position: 0 0; }
+      100% { background-position: -13440px 0; }
+    }
+    /* 宠物闪光 */
+    .pet-character.flash {
+      filter: brightness(1.5);
+      transition: filter 0.1s;
     }
 
     .prompt-text {
@@ -224,7 +246,7 @@
 
     @media (max-width: 500px) {
       .book-container { padding: 1.5rem 0.8rem; border-radius: 2rem; }
-      .video-container { max-width: 100%; margin-bottom: 1.5rem; border-radius: 1.5rem; }
+      .pet-scene { margin-bottom: 1.5rem; overflow: hidden; }
       .answer-display { font-size: 1.2rem; min-height: 100px; padding: 1.2rem; }
       .get-answer-btn { font-size: 1.1rem; padding: 0.7rem 1.8rem; }
       .prompt-text { font-size: 1rem; }
@@ -247,10 +269,9 @@
   </div>
 
   <div class="book-container">
-    <!-- 展示区：tiao.gif 直接显示 -->
-    <div class="video-container">
-      <video autoplay loop muted playsinline id="displayVideo" preload="auto" src="mp4/ya1.mp4"
-             webkit-playsinline x5-playsinline x5-video-player-type="h5-page" x5-video-player-fullscreen="false">您的浏览器不支持视频播放</video>
+    <!-- 展示区：精灵动画宠物 -->
+    <div class="pet-scene" id="petScene">
+      <div class="pet-character" id="petCharacter"></div>
     </div>
 
     <div class="prompt-text">
@@ -276,8 +297,9 @@
       const progressText = document.getElementById('progressText');
       const getAnswerBtn = document.getElementById('getAnswerBtn');
 
-      // ========== 轻量预加载 ==========
+      // ========== 页面展示：不依赖视频加载 ==========
       var pageShown = false;
+      var progressVal = 0;
 
       function showPage() {
         if (pageShown) return;
@@ -291,27 +313,61 @@
       }
 
       function updateProgress(pct) {
+        progressVal = pct;
         progressFill.style.width = pct + '%';
         progressText.textContent = pct + '%';
       }
 
-      // 保底：2 秒自动显示
-      var safetyTimer = setTimeout(function() {
-        updateProgress(100);
-        if (!pageShown) showPage();
-      }, 2000);
+      // 快速渐进加载动画（视觉装饰），然后显示页面
+      function animateLoading() {
+        var steps = [0, 15, 30, 50, 68, 82, 92, 100];
+        var i = 0;
+        function tick() {
+          if (pageShown) return;
+          updateProgress(steps[i]);
+          i++;
+          if (i < steps.length) {
+            setTimeout(tick, 70 + Math.random() * 60);
+          } else {
+            setTimeout(function() { if (!pageShown) showPage(); }, 200);
+          }
+        }
+        tick();
+      }
+      animateLoading();
 
-      // 背景视频：准备就绪后显示页面
-      const displayVideo = document.getElementById('displayVideo');
-      displayVideo.addEventListener('canplay', function() {
-        updateProgress(100);
-        if (!pageShown) { clearTimeout(safetyTimer); showPage(); }
-      }, { once: true });
-      displayVideo.addEventListener('error', function() {
-        updateProgress(100);
-        if (!pageShown) { clearTimeout(safetyTimer); showPage(); }
-      }, { once: true });
-      displayVideo.play().catch(function(){});
+      // ========== 宠物交互 ==========
+      const petCharacter = document.getElementById('petCharacter');
+      var jumpTimer = null;
+
+      function petBounce() {
+        if (jumpTimer) clearTimeout(jumpTimer);
+
+        // 如果已经在跳，重置动画
+        if (petCharacter.classList.contains('jump')) {
+          petCharacter.classList.remove('jump');
+          void petCharacter.offsetWidth; // 触发回流，强制重启动画
+        }
+
+        petCharacter.classList.add('jump');
+
+        // 闪光
+        petCharacter.classList.add('flash');
+        playChime();  // 点击音效
+        setTimeout(function() { petCharacter.classList.remove('flash'); }, 200);
+
+        // 跳完后（4s）恢复 peace 空闲动画
+        jumpTimer = setTimeout(function() {
+          petCharacter.classList.remove('jump');
+          jumpTimer = null;
+        }, 4000);
+      }
+
+      petCharacter.addEventListener('click', petBounce);
+      petCharacter.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        petBounce();
+      }, { passive: false });
 
       // ========== 答案系统 ==========
       const answers = [
@@ -411,6 +467,7 @@
 
         playChime();
         createConfetti();
+        petBounce();  // 宠物同步弹跳
 
         setTimeout(function() { isAnimating = false; }, 600);
         getAnswerBtn.style.transform = 'scale(0.96)';
