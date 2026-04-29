@@ -123,11 +123,9 @@
       width: 100%; height: 100%;
       object-fit: contain;
     }
-    /* 背景视频：最顶层常亮 */
-    .bg-video { z-index: 3; }
-    /* 背景GIF：中间层常亮 */
-    .bg-gif { z-index: 2; display: block; }
-    /* 动作GIF：最底层常驻，点击浮到顶层 */
+    /* 背景视频：顶层常亮循环 */
+    .bg-video { z-index: 2; }
+    /* 动作GIF：底层常驻，点击浮到顶层 */
     .gif-overlay { z-index: 1; display: block; }
     .gif-overlay.rising { z-index: 10; }
 
@@ -254,7 +252,7 @@
   </style>
 </head>
 <body>
-  <div class="version-tag">v 1.0.2</div>
+  <div class="version-tag">v 1.0.3</div>
 
   <!-- 加载弹窗（极简等待） -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -273,7 +271,6 @@
     <div class="video-container">
       <video autoplay loop muted playsinline class="bg-video" id="bgVideo" preload="auto" src="mp4/ya.mp4"
              webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
-      <img src="mp4/ya.gif" class="bg-gif" id="bgGif" alt="">
       <img src="mp4/tiao.gif" class="gif-overlay" id="tiaoGif" alt="">
     </div>
 
@@ -299,7 +296,6 @@
       const progressFill = document.getElementById('progressFill');
       const progressText = document.getElementById('progressText');
       const tiaoGif = document.getElementById('tiaoGif');
-      const bgGif = document.getElementById('bgGif');
       const bgVideo = document.getElementById('bgVideo');
       const getAnswerBtn = document.getElementById('getAnswerBtn');
 
@@ -339,7 +335,6 @@
       preloadImg.onerror = onPreloadDone;
       preloadImg.src = tiaoGif.src;
       tiaoGif.src = tiaoGif.src;
-      bgGif.src = bgGif.src;
 
       // 启动背景视频
       bgVideo.play().catch(function(){});
