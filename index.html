@@ -211,16 +211,6 @@
     .answer-appear {
       animation: answer-appear 1.5s ease-out forwards;
     }
-    /* 答案出现魔法辉光：先亮起再收成常驻光晕 */
-    @keyframes answer-glow {
-      0%   { text-shadow: 0 0 5px rgba(235,215,156,0); }
-      25%  { text-shadow: 0 0 40px rgba(235,215,156,0.6), 0 0 80px rgba(200,180,100,0.3); }
-      60%  { text-shadow: 0 0 25px rgba(235,215,156,0.3), 0 0 50px rgba(200,180,100,0.1); }
-      100% { text-shadow: 0 0 20px #9b8a4a; }
-    }
-    .answer-glow {
-      animation: answer-glow 2s ease-out forwards;
-    }
 
     @media (max-width: 500px) {
       .book-container { padding: 1.5rem 0.8rem; border-radius: 2rem; }
@@ -415,8 +405,48 @@
         try { chimeAudio.currentTime = 0; chimeAudio.play().catch(function(){}); } catch(e) {}
       }
 
+      // 炫彩三角形粒子爆开
+      function createTriangles() {
+        var rect = answerTextElement.getBoundingClientRect();
+        var cx = rect.left + rect.width/2;
+        var cy = rect.top + rect.height/2;
+        var colors = ['#ff0040','#ff8c00','#ffe600','#66ff00','#00ffcc','#0066ff','#6600ff','#ff00cc','#ff88aa','#00ff80','#ff6600','#aa44ff'];
 
-      function setAnswerWithEffect(answer) {
+        for (var i = 0; i < 35; i++) {
+          var el = document.createElement('div');
+          var size = 8 + Math.random() * 18;
+          var color = colors[Math.floor(Math.random() * colors.length)];
+          var angle = Math.random() * Math.PI * 2;
+          var dist = 80 + Math.random() * 300;
+          var dx = Math.cos(angle) * dist;
+          var dy = Math.sin(angle) * dist - 60;
+
+          el.style.cssText = [
+            'position:fixed',
+            'width:' + size + 'px',
+            'height:' + size + 'px',
+            'background:' + color,
+            'clip-path:polygon(50% 0%,0% 100%,100% 100%)',
+            'pointer-events:none',
+            'z-index:1000',
+            'left:' + (cx - size/2) + 'px',
+            'top:' + (cy - size/2) + 'px',
+            'opacity:1',
+            'filter:drop-shadow(0 0 4px ' + color + ')'
+          ].join(';');
+          document.body.appendChild(el);
+
+          el.animate([
+            { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1 },
+            { transform: 'translate('+dx+'px,'+dy+'px) rotate('+(Math.random()*1080-540)+'deg) scale(0.2)', opacity: 0 }
+          ], {
+            duration: 700 + Math.random() * 1100,
+            easing: 'cubic-bezier(0.1,0.8,0.3,1)',
+            fill: 'forwards',
+            delay: Math.random() * 150
+          }).onfinish = function() { el.remove(); };
+        }
+      }
         if (animationTimer) clearTimeout(animationTimer);
         answerTextElement.classList.remove('answer-placeholder');
         answerTextElement.textContent = answer;
@@ -429,12 +459,13 @@
         isAnimating = true;
         var newAnswer = getRandomAnswer();
 
-        answerTextElement.classList.remove('answer-placeholder','answer-appear','answer-glow');
+        answerTextElement.classList.remove('answer-placeholder','answer-appear');
 
         setAnswerWithEffect(newAnswer);
 
-        answerTextElement.classList.add('answer-appear','answer-glow');
+        answerTextElement.classList.add('answer-appear');
 
+        createTriangles();
         playChime();
 
         setTimeout(function() { isAnimating = false; }, 1600);
