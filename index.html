@@ -202,6 +202,14 @@
       letter-spacing: 0.2em;
       opacity: 0.6;
     }
+    .footnote a {
+      color: #6a5e3a;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footnote a:hover {
+      color: #9b8a5a;
+    }
 
     /* ===== 答案出场（慢速优雅渐入） ===== */
     @keyframes answer-appear {
@@ -221,7 +229,7 @@
   </style>
 </head>
 <body>
-  <div class="version-tag">v 1.1.0</div>
+  <div class="version-tag">v 1.2.0</div>
 
   <!-- 加载弹窗 -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -250,7 +258,7 @@
       <span class="answer-placeholder" id="answerText">静默思考中...</span>
     </div>
 
-    <div class="footnote">◈ YajijiOracle · 鸭吉吉答案之书 ◈</div>
+    <div class="footnote">◈ YajijiOracle · 鸭吉吉答案之书 ◈<br><span style="opacity:0.4">by <a href="https://github.com/TsangHaotian">TsangHaotian</a></span> <span class="sep">|</span> <a href="https://github.com/TsangHaotian/YajijiOracle">GitHub</a></div>
   </div>
 
   <script>
@@ -259,9 +267,7 @@
       const progressFill = document.getElementById('progressFill');
       const progressText = document.getElementById('progressText');
 
-      // ========== 预加载宠物精灵图 ==========
-      var loadedCount = 0;
-      var totalAssets = 2; // peace_strip + jump_strip
+      // ========== 预加载 + 加载进度 ==========
       var pageShown = false;
       var progressVal = 0;
 
@@ -284,55 +290,35 @@
         console.log('🦆 YajijiOracle v1.1.0 已开启。');
       }
 
-      // 装饰进度模拟 + 真实加载跟踪
-      function onAssetLoaded() {
-        loadedCount++;
-        var realPct = Math.round((loadedCount / totalAssets) * 100);
-        // 取模拟进度和真实进度的最大值
-        if (realPct > progressVal) updateProgress(realPct);
-        if (loadedCount >= totalAssets) {
-          clearFallback();
-          showPage();
-        }
+      // 预加载两张精灵图
+      var loaded = 0;
+      function onImgLoad() {
+        loaded++;
+        var pct = loaded === 1 ? 65 : 100;
+        if (pct > progressVal) updateProgress(pct);
+        if (loaded >= 2) showPage();
       }
 
-      // 预加载 peace_strip
       var peaceImg = new Image();
-      peaceImg.onload = peaceImg.onerror = onAssetLoaded;
+      peaceImg.onload = peaceImg.onerror = onImgLoad;
       peaceImg.src = 'assets/peace_strip.png';
-
-      // 预加载 jump_strip
       var jumpImg = new Image();
-      jumpImg.onload = jumpImg.onerror = onAssetLoaded;
+      jumpImg.onload = jumpImg.onerror = onImgLoad;
       jumpImg.src = 'assets/jump_strip.png';
 
-      // 模拟进度装饰（到80%为止，剩下等真实加载）
-      var simSteps = [0, 8, 18, 30, 42, 55, 65, 72, 78, 80];
-      var simIdx = 0;
-      function tickSim() {
+      // 装饰模拟进度（快速走到60%，等真实加载完成）
+      function simProgress(step) {
         if (pageShown) return;
-        if (progressVal < simSteps[simIdx]) updateProgress(simSteps[simIdx]);
-        simIdx++;
-        if (simIdx < simSteps.length) {
-          setTimeout(tickSim, 80 + Math.random() * 70);
-        } else {
-          // 模拟走到80%后，每3秒检查一次真实进度
-          function checkDone() {
-            if (!pageShown) {
-              // 超过15秒强制显示
-              showPage();
-            }
-          }
-          setTimeout(checkDone, 15000);
+        var vals = [5, 15, 28, 40, 50, 58, 62];
+        if (step < vals.length) {
+          if (vals[step] > progressVal) updateProgress(vals[step]);
+          setTimeout(function() { simProgress(step + 1); }, 70 + Math.random() * 60);
         }
       }
-      tickSim();
+      simProgress(0);
 
-      // 保底：20秒强制显示
-      var fallbackTimer = setTimeout(function() {
-        if (!pageShown) showPage();
-      }, 20000);
-      function clearFallback() { clearTimeout(fallbackTimer); fallbackTimer = null; }
+      // 保底：8秒强制显示
+      setTimeout(function() { if (!pageShown) showPage(); }, 8000);
 
       // ========== 宠物交互 ==========
       const petCharacter = document.getElementById('petCharacter');
@@ -447,6 +433,7 @@
           }).onfinish = function() { el.remove(); };
         }
       }
+      function setAnswerWithEffect(answer) {
         if (animationTimer) clearTimeout(animationTimer);
         answerTextElement.classList.remove('answer-placeholder');
         answerTextElement.textContent = answer;
