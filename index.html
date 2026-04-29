@@ -123,8 +123,8 @@
       width: 100%; height: 100%;
       object-fit: contain;
     }
-    /* 背景视频：顶层常亮循环 */
-    .bg-video { z-index: 2; }
+    /* 背景GIF：顶层常亮循环 */
+    .bg-gif { z-index: 2; display: block; }
     /* 动作GIF：底层常驻，点击由JS控制z-index浮到顶层 */
     .gif-overlay { z-index: 1; display: block; }
 
@@ -251,7 +251,7 @@
   </style>
 </head>
 <body>
-  <div class="version-tag">v 1.0.4</div>
+  <div class="version-tag">v 1.0.5</div>
 
   <!-- 加载弹窗（极简等待） -->
   <div class="loading-overlay" id="loadingOverlay">
@@ -268,8 +268,7 @@
   <div class="book-container">
     <!-- 中央动画区 -->
     <div class="video-container">
-      <video autoplay loop muted playsinline class="bg-video" id="bgVideo" preload="auto" src="mp4/ya.mp4"
-             webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
+      <img src="mp4/ya.gif" class="bg-gif" id="bgGif" alt="">
       <img src="mp4/tiao.gif" class="gif-overlay" id="tiaoGif" alt="">
     </div>
 
@@ -295,7 +294,7 @@
       const progressFill = document.getElementById('progressFill');
       const progressText = document.getElementById('progressText');
       const tiaoGif = document.getElementById('tiaoGif');
-      const bgVideo = document.getElementById('bgVideo');
+      const bgGif = document.getElementById('bgGif');
       const getAnswerBtn = document.getElementById('getAnswerBtn');
 
       // ========== 预加载：视频 + GIF 同时加载 ==========
@@ -335,8 +334,8 @@
       preloadImg.src = tiaoGif.src;
       tiaoGif.src = tiaoGif.src;
 
-      // 启动背景视频
-      bgVideo.play().catch(function(){});
+      // 触发背景GIF加载
+      bgGif.src = bgGif.src;
 
       // ========== 答案系统 ==========
       const answers = [
@@ -437,14 +436,14 @@
         playChime();
         createConfetti();
 
-        // tiao GIF 浮到顶层，mp4 沉到底层
+        // tiao GIF 浮到顶层，背景GIF沉到底层
         tiaoGif.style.zIndex = '10';
-        bgVideo.style.zIndex = '1';
+        bgGif.style.zIndex = '1';
         tiaoGif.src = tiaoGif.src.split('?')[0] + '?t=' + Date.now();
-        // 播完 mp4 切回顶层
+        // 播完背景GIF切回顶层
         setTimeout(function() {
           tiaoGif.style.zIndex = '1';
-          bgVideo.style.zIndex = '2';
+          bgGif.style.zIndex = '2';
         }, 2500);
 
         setTimeout(function() { isAnimating = false; }, 600);
