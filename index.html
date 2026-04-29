@@ -130,7 +130,8 @@
       display: block;
     }
     #jumpVideo {
-      display: none;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .prompt-text {
@@ -595,13 +596,15 @@
 
         // 显示鸭子跳视频（主视频保持播放不中断）
         jumpVideo.currentTime = 0;
-        jumpVideo.style.display = 'block';
+        jumpVideo.style.opacity = '1';
+        jumpVideo.style.pointerEvents = 'auto';
         jumpVideo.play().catch(function() {});
 
         function hideJump() {
           isVideoJumping = false;
           jumpVideo.pause();
-          jumpVideo.style.display = 'none';
+          jumpVideo.style.opacity = '0';
+          jumpVideo.style.pointerEvents = 'none';
         }
         jumpVideo.addEventListener('ended', hideJump, { once: true });
         var fallbackTimer = setTimeout(function() {
