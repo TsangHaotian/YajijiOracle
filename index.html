@@ -116,12 +116,30 @@
       overflow: hidden;
       box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(180, 150, 70, 0.2);
       border: 1px solid rgba(200, 180, 100, 0.25);
-      background: #000;
+      background: radial-gradient(ellipse at center, rgba(30, 22, 5, 0.95) 0%, #000 100%);
       position: relative;
     }
-
+    /* 视频加载中占位：金色微光脉动 */
+    .video-container::before {
+      content: '🦆';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2.4rem;
+      opacity: 0.15;
+      z-index: 0;
+      animation: placeholder-pulse 2.4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes placeholder-pulse {
+      0%, 100% { opacity: 0.10; transform: translate(-50%, -50%) scale(1); }
+      50%      { opacity: 0.25; transform: translate(-50%, -50%) scale(1.08); }
+    }
+    /* 视频/GIF加载完成后盖住占位符 */
     .video-container video, .video-container img {
       position: absolute;
+      z-index: 1;
       top: 0;
       left: 0;
       width: 100%;
@@ -368,7 +386,7 @@
     
     <!-- 中央MP4视频区域 -->
     <div class="video-container">
-      <video autoplay loop muted playsinline id="bgVideo" preload="auto" src="mp4/ya.mp4"
+      <video autoplay loop muted playsinline id="bgVideo" preload="metadata" src="mp4/ya.mp4"
              webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
       <img src="mp4/tiao.gif" class="gif-overlay" id="tiaoGif" alt="">
     </div>
